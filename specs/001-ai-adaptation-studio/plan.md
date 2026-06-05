@@ -21,6 +21,7 @@ Scope:
   - Center Adaptation Canvas.
   - Right AI Director / Inspector.
 - Encode the interaction model from `DESIGN.md`.
+- Disable framework development UI that interferes with product evaluation.
 
 Verification:
 
@@ -52,6 +53,7 @@ Scope:
   - Timeline.
   - Harness Trace.
   - Compare Lite.
+- Render a real Settings surface for workflow configuration, not theme-only controls.
 - Make left-panel clicks expand or focus meaningful creation states.
 - Make center canvas stage changes feel like entering a creative workspace, not switching static cards.
 
@@ -62,6 +64,7 @@ Verification:
 - Exported YAML parses successfully.
 - UI shows the whole adaptation flow from source to YAML.
 - Inspector updates for selected direction, scene, source ref, version, or validation issue.
+- Settings expose workspace/output/model/storage preferences in Chinese.
 
 ## Slice 3: Real Source Import And Lightweight Retrieval
 
@@ -134,6 +137,7 @@ Scope:
 - Add direction branch support when direction workflows need it.
 - Add product brief, YAML schema docs, README demo flow, sample inputs, sample outputs.
 - Polish empty, loading, error, validation, revision, compare, and trace states.
+- Polish Settings so it supports real product configuration without becoming a visual-customization toy.
 
 Verification:
 

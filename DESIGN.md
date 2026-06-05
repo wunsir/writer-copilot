@@ -16,17 +16,17 @@ source material -> interpretation -> direction -> brief -> blueprint -> screenpl
 
 ## Layout Model
 
-Use a three-panel Studio:
+Use a three-panel Studio as the default state, not as a permanent cage:
 
-- Left: Creation Panel.
+- Left: Project Binder.
 - Center: Adaptation Canvas.
-- Right: AI Director / Inspector.
+- Right: Object Inspector.
 
-The three panels should not be visually equal. The center canvas is primary. The left panel guides entry and controls. The right inspector explains, verifies, and traces.
+The three panels should not be visually equal. The center canvas is primary. The left panel guides entry and can expand into focused project work. The right inspector explains, verifies, and traces only the current object.
 
 ## Left Creation Panel
 
-The left panel is not a static settings sidebar.
+The left panel is not a static settings sidebar. It is a project Binder that can expand into a focused panel.
 
 It should support progressive depth:
 
@@ -50,7 +50,7 @@ Avoid:
 
 ## Adaptation Canvas
 
-The center canvas should change by project stage and make one creative asset primary at a time.
+The center canvas should change by project stage and make one creative asset primary at a time. Different stages should feel like different work modes, not the same card list with a different title.
 
 Canvas states:
 
@@ -71,12 +71,13 @@ The right panel is context-aware. It should show details for the selected asset 
 
 Inspector tabs:
 
-- Director.
-- Evidence.
+- 助理.
+- 依据.
 - YAML.
-- Validation.
-- Timeline.
-- Trace.
+- 校验.
+- 时间线.
+- 运行.
+- 设置.
 
 The Inspector should answer:
 
@@ -94,6 +95,20 @@ The Inspector should answer:
 - Make validation feel operational: issues should point to fields, scenes, characters, locations, or source refs.
 - Make revisions local and confident: selected scene, instruction, before/after, validation rerun.
 - Use timeline and trace as product confidence, not debug clutter.
+
+## Settings Experience
+
+Settings belong inside the Studio as a dedicated modal or slide-over. They should not reuse the right Inspector, because settings are global workspace configuration rather than properties of the currently selected creative object.
+
+Settings should be grouped by user intent:
+
+- 创作偏好: target medium, pacing, fidelity, tone, default knowledge packs.
+- 输出: YAML schema version, export format, include source excerpts, include validation report.
+- 模型: provider status, model name, API key guidance without exposing secrets.
+- 工作区: autosave, local storage, export project JSON, clear local data.
+- 阅读: interface density and preview font size if needed.
+
+Do not expose raw color and font knobs as the main settings experience. The product should have a coherent visual system by default. If a setting affects presentation, it must affect the relevant Studio surface globally and predictably.
 
 ## Visual Tone
 

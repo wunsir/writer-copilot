@@ -6,7 +6,7 @@ It is not intended to be a simple "novel in, YAML out" form tool. The product sh
 
 ## Current Repository Status
 
-This repository is at the planning/bootstrap stage. No application scaffold has been created yet.
+This repository now has an initial Next.js Studio scaffold with sample data, domain validation, YAML export, and a mock adaptation flow.
 
 Start with:
 
@@ -31,6 +31,29 @@ The exact scaffold should be confirmed before dependencies are added. The curren
 - OpenAI-compatible model API behind a small adaptation harness
 
 Do not add these dependencies until the project scaffold task is explicitly started.
+
+## Local Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the app:
+
+```bash
+npm run dev
+```
+
+Verify:
+
+```bash
+npm test
+npm run typecheck
+npm run lint
+npm run build
+```
 
 ## Execution Direction
 
