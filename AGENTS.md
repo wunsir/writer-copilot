@@ -27,6 +27,17 @@ Core product capabilities:
 - Adaptation Harness with step orchestration, JSON validation, repair, and trace.
 - Three-panel Studio UI: Creation Panel, Adaptation Canvas, AI Director / Inspector.
 
+## Studio Interaction Direction
+
+The UI should feel like a real creative studio, not a static form page.
+
+- The left Creation Panel is an entry and control surface. Its items should be able to expand, focus, or enter a deeper creation mode instead of only toggling flat settings.
+- The center Adaptation Canvas is the main working surface. It changes by stage and should make the current creative asset feel primary: source map, diagnosis, direction exploration, brief, blueprint, screenplay, compare.
+- The right AI Director / Inspector provides context, evidence, YAML, validation, timeline, trace, and selected-item details without stealing the main workflow.
+- Direction Explorer, Adaptation Brief, and Scene Blueprint must appear early in the product shell, even before real AI is connected.
+- Prefer progressive disclosure, focused editing states, and stage transitions over dense all-at-once panels.
+- Do not make a landing page as the first screen. The first screen should be the usable Studio.
+
 ## Hard Rules
 
 - Do not reduce the product to one prompt that directly converts a novel into YAML.
@@ -55,7 +66,8 @@ Use a lightweight, risk-based workflow:
 
 - For planning work, update `specs/001-ai-adaptation-studio/` first.
 - For implementation work, keep diffs small and reviewable.
-- Prefer vertical slices that can be verified end to end.
+- Prefer compact product vertical slices that can be verified end to end.
+- Treat detailed task lists as checklists inside slices, not as a reason to stretch development into excessive process.
 - Do not add production dependencies without approval.
 - Do not modify `.env` files unless explicitly asked.
 - Do not commit secrets.
@@ -75,4 +87,3 @@ Future implementation should include checks for:
 - Build.
 - Browser verification for UI flows.
 - Sample novel to valid screenplay YAML flow.
-

@@ -2,159 +2,89 @@
 
 ## Current State
 
-The repository currently has planning documents only. Do not assume an app scaffold, package manager, test runner, or framework exists until Phase 0 is completed.
+The repository currently has planning documents only. Do not assume an app scaffold, package manager, test runner, or framework exists until Slice 1 is completed.
 
-## Task 0.1: Confirm Scaffold Choices
+These tasks are execution checklists inside compact slices. They are not meant to force one tiny task per development round.
 
-Scope:
+## Slice 1 Checklist: Scaffold And Studio Shell
+
+### 1.1 Confirm Scaffold Choices
 
 - Inspect current repository files.
-- Confirm or choose web stack.
-- Confirm package manager.
+- Confirm web stack and package manager.
 - Confirm test runner.
-- Identify initial dependencies that require approval.
+- List dependencies before installing them.
 
-Do not:
+Do not add dependencies until approved.
 
-- Add dependencies.
-- Create app code.
-- Modify `.env` files.
+Acceptance:
 
-Success criteria:
+- Scaffold proposal is explicit.
+- Dependency additions are listed.
 
-- A short scaffold proposal exists in the working notes or docs.
-- Dependency additions are explicitly listed before install.
+### 1.2 Scaffold The App
 
-## Task 0.2: Scaffold Application
-
-Scope:
-
-- Create the approved web application scaffold.
+- Create the approved app scaffold.
 - Add TypeScript.
 - Add lint, typecheck, test, and build commands where practical.
-- Update README with setup commands.
+- Update README with accurate local commands.
 
-Do not:
+Do not add AI calls, auth, database, billing, or deployment configuration.
 
-- Build product features.
-- Add AI calls.
-- Add database, auth, billing, or deployment configuration.
-
-Success criteria:
+Acceptance:
 
 - Install succeeds.
 - Typecheck passes.
 - Lint passes.
 - Build passes.
-- README has accurate local commands.
 
-## Task 1.1: Add Domain Schemas
+### 1.3 Build First Studio Shell
 
-Scope:
+- First screen is the Studio, not a landing page.
+- Add three-panel layout:
+  - Creation Panel.
+  - Adaptation Canvas.
+  - AI Director / Inspector.
+- Add responsive behavior.
+- Add basic stage navigation.
 
-- Add domain types and schemas for:
-  - Source chapters and chunks.
-  - Story diagnosis.
-  - Adaptation directions.
-  - Adaptation Brief.
-  - Scene Blueprint.
-  - Screenplay JSON.
-  - Validation report.
-  - Harness trace.
-  - Project version.
-  - Scene revision.
+Acceptance:
 
-Do not:
+- App opens locally.
+- Desktop layout is usable.
+- Mobile layout does not overlap.
+- Left panel can enter or expand at least one focused creation state.
 
-- Add UI.
-- Add AI calls.
-- Add persistence.
+## Slice 2 Checklist: Domain Core And Mock Full Flow
 
-Success criteria:
+### 2.1 Domain Core
 
-- Schemas compile.
-- Sample valid data passes schema parsing.
-- Invalid required fields fail schema parsing.
+- Add schemas and types for source, diagnosis, direction, brief, blueprint, screenplay, validation, trace, version, and scene revision.
+- Add sample project data.
+- Add sample novel and sample YAML.
 
-## Task 1.2: Add Validation Utilities
+Acceptance:
 
-Scope:
+- Sample data parses through schemas.
+- Invalid required fields fail.
+
+### 2.2 Validation And YAML
 
 - Validate unique scene IDs.
 - Validate character references.
 - Validate location references.
 - Validate source references.
-- Validate adaptation decisions have type and reason.
-- Return structured validation report.
+- Validate adaptation decision type and reason.
+- Export validated JSON to YAML.
+- Parse exported YAML.
 
-Do not:
-
-- Hide validation failures behind a generic "failed" string.
-- Treat validation as UI-only.
-
-Success criteria:
+Acceptance:
 
 - Valid sample passes.
-- Duplicate scene ID fails.
-- Missing character ID fails.
-- Missing location ID fails.
-- Missing source ref fails.
-- Missing adaptation decision reason fails.
+- Broken samples fail with specific issue records.
+- YAML contains source refs and validation report.
 
-## Task 1.3: Add YAML Export Utility
-
-Scope:
-
-- Convert validated screenplay JSON to YAML.
-- Parse exported YAML in tests or verification.
-- Preserve stable field ordering where practical.
-
-Do not:
-
-- Ask AI to generate YAML directly.
-
-Success criteria:
-
-- Sample JSON exports to YAML.
-- Exported YAML parses.
-- YAML contains source references and validation report.
-
-## Task 1.4: Add Sample Data
-
-Scope:
-
-- Add sample novel text.
-- Add sample project JSON.
-- Add sample output YAML.
-
-Success criteria:
-
-- Sample project passes validation.
-- Sample output YAML matches the documented schema.
-
-## Task 2.1: Build Three-Panel Studio Shell
-
-Scope:
-
-- Create Creation Panel.
-- Create Adaptation Canvas.
-- Create AI Director / Inspector.
-- Use sample project data.
-
-Do not:
-
-- Add live AI.
-- Add auth or database.
-
-Success criteria:
-
-- App renders the three-panel layout.
-- Desktop layout is usable.
-- Mobile layout does not overlap.
-
-## Task 2.2: Render Mock Workflow States
-
-Scope:
+### 2.3 Mock Studio Flow
 
 - Render Chapter Map.
 - Render Story Diagnosis.
@@ -162,222 +92,144 @@ Scope:
 - Render Adaptation Brief.
 - Render Scene Blueprint.
 - Render Screenplay Draft.
+- Render YAML Preview.
+- Render Validation Panel.
+- Render Timeline.
+- Render Harness Trace.
+- Render Compare Lite.
 
-Success criteria:
+Acceptance:
 
-- User can navigate or progress through visible workflow states.
-- Direction cards include source references.
+- User can move through the full adaptation flow.
+- Direction cards include source refs.
 - Scene cards include adaptation decisions.
+- Inspector changes when selecting direction, scene, source ref, version, or validation issue.
 
-## Task 2.3: Render Inspector Tabs
+## Slice 3 Checklist: Real Source Import And Lightweight Retrieval
 
-Scope:
+### 3.1 Import And Parse
 
-- YAML Preview.
-- Validation Panel.
-- Timeline.
-- Harness Trace.
-- Source Evidence.
-- Settings placeholder only if needed.
+- Add paste import.
+- Add `.txt` upload.
+- Add `.docx` upload only after dependency approval.
+- Detect Chinese and English chapter headings.
+- Require or guide toward 3+ chapters.
 
-Success criteria:
+Acceptance:
 
-- YAML preview uses actual YAML utility.
-- Validation panel uses actual validation utility.
-- Timeline and trace render from sample data.
+- 3+ chapter sample parses.
+- Too-few-chapter input shows actionable feedback.
 
-## Task 3.1: Implement Text And TXT Import
-
-Scope:
-
-- Paste text.
-- Upload `.txt`.
-- Store imported source in app state.
-
-Success criteria:
-
-- User can import a sample novel.
-- Imported text appears in source workflow.
-
-## Task 3.2: Implement Chapter Parser
-
-Scope:
-
-- Detect headings such as Chinese numbered chapters and English `Chapter 1`.
-- Split into chapters.
-- Report too-few-chapter state.
-
-Success criteria:
-
-- 3+ chapter sample parses correctly.
-- Too few chapters shows actionable feedback.
-
-## Task 3.3: Implement Source Chunks And Search
-
-Scope:
+### 3.2 Source Chunks And Search
 
 - Split chapters into paragraph chunks.
 - Assign stable chunk IDs.
-- Extract simple keywords, names, and event terms.
+- Extract simple keywords, names, locations, and event terms.
 - Add lightweight search.
 
-Success criteria:
+Acceptance:
 
-- Source chunks are generated.
-- Search returns relevant chunks.
-- Source evidence panel resolves chunk IDs.
+- Chunks are generated.
+- Search retrieves relevant chunks.
+- Source refs resolve in the inspector.
 
-## Task 4.1: Add Knowledge Packs
+### 3.3 Replace Sample Source
 
-Scope:
+- Let imported source feed the existing Studio flow.
+- Keep mock downstream generation available until AI harness is connected.
+
+Acceptance:
+
+- Imported source updates Chapter Map and Evidence views.
+- Mock directions and scenes can reference imported chunk IDs.
+
+## Slice 4 Checklist: Knowledge Packs And AI Harness
+
+### 4.1 Knowledge Packs
 
 - Add initial knowledge pack markdown files.
 - Add pack metadata.
 - Add pack loader.
+- Show active packs and reasons.
 
-Success criteria:
+Acceptance:
 
 - Packs can be listed and loaded.
-- Active packs are visible in the UI.
+- Active packs are visible in the Inspector.
 
-## Task 4.2: Add Direction Engine
+### 4.2 Harness Runtime
 
-Scope:
-
-- Generate or assemble dynamic direction candidates from source intelligence, user controls, and knowledge packs.
-- Attach reasons, risks, preserve/transform lists, and source references.
-
-Success criteria:
-
-- Direction output changes when preferences change.
-- Direction cards resolve source refs.
-- 3-5 directions are produced when enough source exists.
-
-## Task 5.1: Add Model Provider Boundary
-
-Scope:
-
-- Add OpenAI-compatible provider abstraction.
-- Keep API key handling outside committed source.
-- Document required environment variables.
-
-Do not:
-
-- Commit secrets.
-- Modify `.env` unless explicitly asked.
-
-Success criteria:
-
-- Provider can be configured by environment variables.
-- Missing key produces clear error.
-
-## Task 5.2: Add Harness Step Runner And Trace
-
-Scope:
-
-- Add harness step definitions.
+- Add model provider boundary.
+- Add harness step runner.
 - Add trace records.
-- Add status and error handling.
+- Add JSON parsing.
+- Add schema validation.
+- Add repair attempts.
 
-Success criteria:
+Acceptance:
 
-- Steps record started, succeeded, failed states.
-- Trace is visible in UI.
+- Step trace records started, succeeded, failed, validation, repair, and error states.
+- Missing API key produces clear error without leaking secrets.
 
-## Task 5.3: Add Structured AI Steps
+### 4.3 AI Generation Steps
 
-Scope:
+- Analyze story.
+- Generate directions.
+- Build Adaptation Brief.
+- Generate Scene Blueprint.
+- Generate screenplay JSON.
+- Generate YAML only from validated JSON.
 
-- `analyze_story`.
-- `generate_directions`.
-- `build_adaptation_brief`.
-- `generate_screenplay`.
-- JSON parsing.
-- Schema validation.
-- Repair attempt.
+Acceptance:
 
-Success criteria:
+- Outputs are JSON-first.
+- Invalid output is rejected or repaired.
+- Final screenplay validates.
+- YAML export succeeds.
 
-- AI outputs are JSON-first.
-- Invalid JSON is rejected or repaired.
-- Valid outputs update project state.
+## Slice 5 Checklist: Scene Revision, Versioning, Compare, And Demo Polish
 
-## Task 6.1: Add Scene Revision UI
-
-Scope:
+### 5.1 Scene Revision
 
 - Select one scene.
 - Enter revision instruction.
-- Show revision status.
-
-Success criteria:
-
-- User can target one scene for revision.
-
-## Task 6.2: Add Revise Scene Harness Step
-
-Scope:
-
-- Send selected scene and relevant source context.
-- Receive updated scene JSON.
+- Run revise scene step.
 - Validate updated scene.
 - Replace selected scene only.
+- Regenerate validation and YAML.
 
-Success criteria:
+Acceptance:
 
-- Only selected scene changes.
-- Validation and YAML rerun.
-- Scene revision record is created.
+- Only selected scene changes unless related validation updates are required.
+- Scene revision record stores instruction, before, after, and summary.
 
-## Task 7.1: Add Checkpoint Timeline
+### 5.2 Versioning And Compare
 
-Scope:
-
-- Create checkpoint records after key actions.
-- Persist checkpoints locally.
+- Add project checkpoints.
+- Persist snapshots locally.
 - Render timeline.
-
-Success criteria:
-
-- Timeline shows import, direction, generation, revision, and manual checkpoint actions.
-- Refresh preserves local timeline.
-
-## Task 7.2: Add Compare And Restore Lite
-
-Scope:
-
 - Compare current and previous snapshot.
-- Show scene-level and adaptation-decision changes.
 - Restore selected checkpoint.
+- Add direction branch support when needed.
 
-Success criteria:
+Acceptance:
 
+- Timeline records key actions.
 - Compare identifies added, removed, and modified scenes.
-- Restore updates app state.
+- Restore updates project state.
+- Refresh preserves local state.
 
-## Task 8.1: Add Product And Schema Docs
-
-Scope:
+### 5.3 Demo Polish And Docs
 
 - Add `docs/product-brief.md`.
 - Add `docs/yaml-schema.md`.
-- Keep docs aligned with implementation.
+- Update README demo flow.
+- Add sample input and output files.
+- Polish empty, loading, error, validation, revision, compare, and trace states.
 
-Success criteria:
+Acceptance:
 
-- Docs describe actual fields and demo flow.
-- Schema docs match validation rules.
-
-## Task 8.2: Final Demo Verification
-
-Scope:
-
-- Run fresh typecheck, lint, tests, and build.
-- Run browser check for the main flow.
-- Verify sample novel to YAML flow.
-
-Success criteria:
-
-- All relevant commands pass or failures are documented with cause.
-- Demo flow is reproducible from README.
+- README demo flow is reproducible.
+- Schema docs match implementation.
+- Typecheck, lint, tests, build, and browser checks pass or failures are documented.
 
