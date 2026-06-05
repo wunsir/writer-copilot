@@ -10,7 +10,9 @@ This repository is at the planning/bootstrap stage. No application scaffold has 
 
 Start with:
 
+- `PRODUCT.md` for product context.
 - `AGENTS.md` for repository working rules.
+- `DESIGN.md` for Studio UI and interaction direction.
 - `specs/001-ai-adaptation-studio/spec.md` for product scope and boundaries.
 - `specs/001-ai-adaptation-studio/plan.md` for staged delivery.
 - `specs/001-ai-adaptation-studio/tasks.md` for executable task slices.
@@ -30,3 +32,14 @@ The exact scaffold should be confirmed before dependencies are added. The curren
 
 Do not add these dependencies until the project scaffold task is explicitly started.
 
+## Execution Direction
+
+Development should move in compact product slices:
+
+1. Scaffold and Studio shell.
+2. Domain core, sample data, and mock full-flow Studio.
+3. Real source import, chapter parsing, source chunks, and lightweight retrieval.
+4. Knowledge packs, AI harness, JSON-first generation, validation, and YAML export.
+5. Scene revision, creative versioning, compare, persistence, docs, and demo polish.
+
+The first usable screen should be the Studio itself, not a marketing landing page.

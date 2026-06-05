@@ -2,72 +2,45 @@
 
 ## Planning Principle
 
-Implement the full AI Adaptation Studio vision in staged slices. Do not remove core product concepts to make a tiny converter. Instead, build the real architecture early and replace mock behavior with real behavior layer by layer.
+Build the full AI Adaptation Studio vision through compact product slices. Do not shrink the product into a tiny converter, but also do not turn development into a long chain of tiny process tasks.
 
-## Phase 0: Repository Foundation
+Each slice should deliver a visible product step and a small set of verification checks. Detailed tasks are checklists inside a slice, not separate process ceremonies.
 
-Goal: Create a working application scaffold and baseline tooling after explicit approval to add dependencies.
+## Slice 1: Scaffold And Studio Shell
+
+Goal: Start the app and immediately establish the real Studio shape.
 
 Scope:
 
-- Choose and scaffold the web stack.
-- Add TypeScript.
-- Add lint, build, and test commands.
-- Add minimal app shell entry point.
-- Keep dependency choices small and justified.
+- Confirm stack and package manager before adding dependencies.
+- Scaffold the app.
+- Add baseline TypeScript, lint, test, and build commands where practical.
+- Build the first Studio screen, not a landing page.
+- Establish the three-panel layout:
+  - Left Creation Panel.
+  - Center Adaptation Canvas.
+  - Right AI Director / Inspector.
+- Encode the interaction model from `DESIGN.md`.
 
 Verification:
 
-- Package install succeeds.
-- Typecheck command exists and passes.
-- Lint command exists and passes.
-- Build command exists and passes.
-- README includes current local dev commands.
+- Install succeeds.
+- Typecheck, lint, and build commands exist and pass.
+- App opens locally.
+- The first screen is the Studio.
+- Desktop and mobile layouts do not overlap.
 
-## Phase 1: Domain Core
+## Slice 2: Domain Core And Mock Full Flow
 
-Goal: Define the product data model before AI and UI logic spread.
+Goal: Make the complete product flow visible with sample data before connecting real import or AI.
 
 Scope:
 
-- Define domain types and schemas for:
-  - Source project.
-  - Source chapters.
-  - Source chunks.
-  - Story diagnosis.
-  - Adaptation directions.
-  - Adaptation Brief.
-  - Scene Blueprint.
-  - Screenplay JSON.
-  - Validation report.
-  - Harness run.
-  - Project version.
-  - Scene revision.
-- Implement validation utilities.
+- Define domain schemas for source, diagnosis, directions, brief, blueprint, screenplay, validation, trace, versions, and scene revisions.
+- Add sample novel, sample project JSON, sample trace, sample timeline, and sample YAML.
+- Implement real validation utilities.
 - Implement JSON to YAML export.
-- Add sample project data and sample YAML.
-
-Verification:
-
-- Valid sample passes validation.
-- Duplicate scene ID fails validation.
-- Missing character reference fails validation.
-- Missing location reference fails validation.
-- Missing source reference fails validation.
-- Exported YAML parses successfully.
-- Relevant tests pass.
-
-## Phase 2: Mock Studio Full Shell
-
-Goal: Build the real product shape using sample data before connecting live AI.
-
-Scope:
-
-- Three-panel Studio UI:
-  - Creation Panel.
-  - Adaptation Canvas.
-  - AI Director / Inspector.
-- Show sample data for:
+- Render the full mock Studio flow:
   - Chapter Map.
   - Story Diagnosis.
   - Direction Explorer.
@@ -76,152 +49,99 @@ Scope:
   - Screenplay Draft.
   - YAML Preview.
   - Validation Panel.
-  - Version Timeline.
+  - Timeline.
   - Harness Trace.
   - Compare Lite.
-- Add export/copy/download for YAML if practical.
+- Make left-panel clicks expand or focus meaningful creation states.
+- Make center canvas stage changes feel like entering a creative workspace, not switching static cards.
 
 Verification:
 
-- App renders without runtime errors.
-- Sample workflow is visible from import to YAML.
-- Validation panel reflects real validation result from sample data.
-- YAML preview matches generated YAML from domain utilities.
-- Browser check confirms desktop layout and mobile fallback do not overlap.
+- Valid sample passes validation.
+- Broken sample cases fail for duplicate scene IDs, missing character refs, missing location refs, missing source refs, and missing adaptation decision reasons.
+- Exported YAML parses successfully.
+- UI shows the whole adaptation flow from source to YAML.
+- Inspector updates for selected direction, scene, source ref, version, or validation issue.
 
-## Phase 3: Source Import And Lightweight RAG
+## Slice 3: Real Source Import And Lightweight Retrieval
 
-Goal: Replace sample source with real imported source handling.
+Goal: Replace static source data with real imported source handling and source-grounded evidence.
 
 Scope:
 
 - Paste text import.
 - `.txt` upload.
-- `.docx` upload if dependency approval and implementation risk are acceptable.
-- Chapter parser for Chinese and English chapter headings.
-- Paragraph source chunks with stable IDs.
-- Basic keyword, name, and event extraction.
-- Lightweight searchable source index.
-- Source evidence panel.
+- `.docx` upload if dependency approval and risk are acceptable.
+- Chapter parser for Chinese and English headings.
+- Source chunks with stable IDs.
+- Basic name, location, event, and keyword extraction.
+- Lightweight search using a small client-side search library or simple fallback.
+- Source evidence panel and clickable source refs.
 
 Verification:
 
-- A sample 3+ chapter novel is parsed into chapters.
-- Chunks have stable IDs.
+- A 3+ chapter sample novel parses into chapters and chunks.
+- Too-few-chapter input shows useful feedback.
 - Search retrieves relevant chunks.
-- UI displays chapter stats and source evidence.
-- Invalid input with too few chapters shows a useful state.
+- Direction, blueprint, screenplay, and inspector views can resolve source refs.
+- Imported source can replace sample source in the Studio flow.
 
-## Phase 4: Knowledge Packs And Direction Engine
+## Slice 4: Knowledge Packs And AI Harness
 
-Goal: Make adaptation recommendations dynamic and grounded.
-
-Scope:
-
-- Add internal knowledge pack files.
-- Add knowledge pack loader.
-- Select packs from target medium, strategy, and user preference.
-- Generate or assemble 3-5 dynamic direction options.
-- Show active packs in UI.
-- Attach source references to directions.
-
-Verification:
-
-- Direction cards are not hardcoded only.
-- Different user preferences influence direction output.
-- Active knowledge packs are visible.
-- Direction source references resolve to imported chunks.
-
-## Phase 5: Adaptation Harness
-
-Goal: Centralize model execution, structured output, validation, repair, and trace.
+Goal: Replace mock generation with a real JSON-first adaptation runtime.
 
 Scope:
 
-- Add model provider abstraction for OpenAI-compatible API.
-- Add harness step runner.
-- Add prompt modules.
-- Enforce JSON-first outputs.
-- Add schema validation per AI step.
-- Add repair attempt for malformed JSON or invalid structure.
+- Add internal knowledge packs.
+- Add knowledge pack selection and display.
+- Add OpenAI-compatible model provider boundary.
+- Add adaptation harness step runner.
+- Add prompts for:
+  - Story diagnosis.
+  - Direction generation.
+  - Adaptation Brief creation.
+  - Scene Blueprint and screenplay generation.
+  - Scene revision.
+- Enforce structured JSON output.
+- Validate each AI output with schemas.
+- Add repair attempts for invalid JSON or invalid structure.
 - Record Harness Trace.
-- Generate screenplay JSON from Adaptation Brief and source context.
-- Generate YAML from validated screenplay JSON.
+- Generate YAML only from validated JSON.
 
 Verification:
 
-- Harness can run from source chunks to story diagnosis.
-- Harness can generate directions.
-- Harness can build an Adaptation Brief from selected direction and user preferences.
-- Harness can generate screenplay JSON.
+- Harness can run from imported source to diagnosis.
+- Harness can generate dynamic directions using source refs and knowledge packs.
+- User can choose or adjust a direction and build an Adaptation Brief.
+- Harness can generate Scene Blueprint and screenplay JSON.
 - Invalid AI output is rejected or repaired.
-- Trace shows steps, source chunks, knowledge packs, status, and errors.
 - Final YAML validates.
+- Trace shows step status, model, source chunks, knowledge packs, validation, repairs, and errors.
 
-## Phase 6: Scene Revision
+## Slice 5: Scene Revision, Versioning, Compare, And Demo Polish
 
-Goal: Support local creative iteration on one selected scene.
-
-Scope:
-
-- Scene selection in UI.
-- Revision input box.
-- `revise_scene` harness step.
-- Validate returned updated scene.
-- Replace only the selected scene.
-- Regenerate validation report and YAML.
-- Record Scene Revision.
-- Create checkpoint.
-
-Verification:
-
-- Revising one scene changes only that scene unless references require validation updates.
-- Validation reruns after revision.
-- YAML updates after revision.
-- Scene revision history shows before, after, instruction, and summary.
-
-## Phase 7: Creative Versioning And Compare
-
-Goal: Add product-level revision confidence without full Git complexity.
+Goal: Make the Studio feel like an iterative creative product.
 
 Scope:
 
-- Project checkpoints.
-- Timeline tab.
-- Checkpoint metadata by action.
-- Compare current vs previous snapshot.
-- Scene-level before/after compare.
-- Restore previous snapshot.
-- Direction branch support when direction workflows require it.
+- Select one scene and revise it with natural language.
+- Replace only the selected scene after validation.
+- Regenerate validation and YAML after revision.
+- Record Scene Revision before/after.
+- Create project checkpoints after key actions.
+- Persist locally.
+- Add timeline, compare, and restore.
+- Add direction branch support when direction workflows need it.
+- Add product brief, YAML schema docs, README demo flow, sample inputs, sample outputs.
+- Polish empty, loading, error, validation, revision, compare, and trace states.
 
 Verification:
 
-- Key actions create checkpoints.
-- Timeline is ordered and readable.
-- Compare shows scene, character, and adaptation decision changes.
-- Restore returns project state to selected checkpoint.
+- Scene revision changes only the selected scene unless validation requires related updates.
+- Timeline records import, direction, generation, revision, compare, restore, and manual checkpoints.
+- Compare shows added, removed, and modified scenes plus adaptation decision changes.
+- Restore returns project state to a prior checkpoint.
 - Local persistence survives refresh.
-
-## Phase 8: Docs, Demo, And Polish
-
-Goal: Make the product understandable and demo-ready.
-
-Scope:
-
-- `docs/product-brief.md`.
-- `docs/yaml-schema.md`.
-- Sample novel.
-- Sample project JSON.
-- Sample output YAML.
-- README setup and demo flow.
-- Empty, loading, error, and validation states.
-- UI polish pass.
-
-Verification:
-
-- A new user can follow README to run the app.
-- Sample novel produces valid screenplay YAML.
-- YAML schema docs match implementation.
-- Browser check confirms core demo path.
-- Typecheck, lint, tests, and build pass.
+- README demo flow is reproducible.
+- Typecheck, lint, tests, build, and browser checks pass or documented failures have clear causes.
 
