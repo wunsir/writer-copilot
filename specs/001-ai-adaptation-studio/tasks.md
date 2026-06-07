@@ -2,7 +2,7 @@
 
 ## Current State
 
-The repository currently has planning documents only. Do not assume an app scaffold, package manager, test runner, or framework exists until Slice 1 is completed.
+The repository has an initial Next.js scaffold, baseline tooling, domain validation utilities, YAML export, sample project data, and a mock Studio shell. Continue to verify the current state before assuming a specific capability is complete.
 
 These tasks are execution checklists inside compact slices. They are not meant to force one tiny task per development round.
 
@@ -33,27 +33,32 @@ Do not add AI calls, auth, database, billing, or deployment configuration.
 
 Acceptance:
 
-- Install succeeds.
-- Typecheck passes.
-- Lint passes.
-- Build passes.
+- Install succeeds. Completed for the initial scaffold.
+- Typecheck passes. Completed for the initial scaffold.
+- Lint passes. Completed for the initial scaffold.
+- Build passes. Completed for the initial scaffold.
 
 ### 1.3 Build First Studio Shell
 
 - First screen is the Studio, not a landing page.
 - Add three-panel layout:
-  - Creation Panel.
+  - Project Binder.
   - Adaptation Canvas.
-  - AI Director / Inspector.
+  - Object Inspector.
 - Add responsive behavior.
 - Add basic stage navigation.
+- Disable framework dev UI that appears inside the product viewport.
+- Add Binder expansion for focused work.
+- Keep Settings as a modal instead of an Inspector tab.
 
 Acceptance:
 
-- App opens locally.
-- Desktop layout is usable.
-- Mobile layout does not overlap.
-- Left panel can enter or expand at least one focused creation state.
+- App opens locally. Completed for the initial scaffold.
+- Desktop layout is usable. Completed by screenshot check.
+- Mobile layout does not overlap. Completed by screenshot check.
+- Left panel can enter or expand at least one focused creation state. Completed for the initial mock shell.
+- Framework dev UI does not appear in the product viewport.
+- Settings open in a separate modal and do not replace the right Inspector. Completed for the current shell.
 
 ## Slice 2 Checklist: Domain Core And Mock Full Flow
 
@@ -97,6 +102,7 @@ Acceptance:
 - Render Timeline.
 - Render Harness Trace.
 - Render Compare Lite.
+- Render Settings.
 
 Acceptance:
 
@@ -104,6 +110,7 @@ Acceptance:
 - Direction cards include source refs.
 - Scene cards include adaptation decisions.
 - Inspector changes when selecting direction, scene, source ref, version, or validation issue.
+- Settings show workflow preferences for creation, output, model, workspace, and reading.
 
 ## Slice 3 Checklist: Real Source Import And Lightweight Retrieval
 

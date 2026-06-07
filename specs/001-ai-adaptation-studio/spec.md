@@ -290,6 +290,23 @@ The right inspector should support:
 - Harness Trace.
 - Settings.
 
+### Product Settings
+
+Settings are part of the Studio workflow, not a decorative theme panel.
+
+Settings should include:
+
+- Workspace and output language.
+- Default adaptation goal controls.
+- Knowledge pack preferences.
+- YAML schema and export options.
+- Model provider status and safe API-key guidance.
+- Autosave and local storage controls.
+- Export project JSON and clear local workspace data.
+- Reading density or preview font-size controls if useful.
+
+Settings must not be limited to changing the settings panel itself. Avoid making arbitrary color and font customization a central product feature.
+
 ## Non-Goals
 
 Unless explicitly requested, do not implement:
@@ -320,5 +337,5 @@ The full target product is successful when:
 - The app records version checkpoints and scene revisions.
 - The user can compare and restore versions.
 - The app displays Harness Trace for important generation steps.
+- Settings support real workflow configuration without breaking the product visual system.
 - Repo docs explain the schema and demo flow.
-
