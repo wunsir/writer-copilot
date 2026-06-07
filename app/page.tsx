@@ -131,10 +131,9 @@ const stageActions: Record<StageId, { label: string; detail: string; tab: Inspec
   brief: { label: "确认简报条款", detail: "简报会成为后续写作时遵守的创作约定。", tab: "director" },
   blueprint: { label: "检查场景蓝图", detail: "先看清每场戏的节拍、改写理由和原文依据。", tab: "evidence" },
   screenplay: {
-    label: "生成剧本（待接入）",
-    detail: "真实生成功能接入后，会按当前简报和场景蓝图生成剧本草稿。",
-    tab: "validation",
-    disabled: true
+    label: "检查剧本校验",
+    detail: "剧本草稿会按当前场景和原文依据生成 YAML 校验。",
+    tab: "validation"
   },
   compare: { label: "查看版本变化", detail: "版本恢复将在真实历史接入后开放。", tab: "timeline" }
 };
@@ -151,7 +150,11 @@ export default function Home() {
   const [sourceDraft, setSourceDraft] = useState("");
   const [sourceParseError, setSourceParseError] = useState<string | null>(null);
   const [sourceSearchQuery, setSourceSearchQuery] = useState("事故");
+  const [isGeneratingDiagnosis, setIsGeneratingDiagnosis] = useState(false);
   const [isGeneratingDirections, setIsGeneratingDirections] = useState(false);
+  const [isGeneratingBrief, setIsGeneratingBrief] = useState(false);
+  const [isGeneratingBlueprint, setIsGeneratingBlueprint] = useState(false);
+  const [isGeneratingScreenplay, setIsGeneratingScreenplay] = useState(false);
   const validationReport = useMemo(() => validateScreenplayProject(project), [project]);
   const yamlPreview = useMemo(() => screenplayToYaml(project, validationReport), [project, validationReport]);
   const sourceChunks = useMemo(
@@ -254,6 +257,46 @@ export default function Home() {
     setInspectorTab("trace");
   }
 
+  async function generateDiagnosisFromApi() {
+    setIsGeneratingDiagnosis(true);
+
+    try {
+      const response = await fetch("/api/adaptation/generate-diagnosis", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ project })
+      });
+      const payload = (await response.json()) as {
+        diagnosis?: ScreenplayProject["story_diagnosis"];
+        run?: HarnessRun;
+        error?: string;
+      };
+
+      if (!response.ok || !payload.diagnosis || !payload.run) {
+        setProject((currentProject) => ({
+          ...currentProject,
+          harness_trace: [
+            payload.run ?? createClientFailedRun("generate_diagnosis", payload.error ?? "故事诊断生成失败。"),
+            ...currentProject.harness_trace
+          ]
+        }));
+        setInspectorTab("trace");
+        return;
+      }
+
+      setProject((currentProject) => ({
+        ...currentProject,
+        story_diagnosis: payload.diagnosis ?? currentProject.story_diagnosis,
+        harness_trace: [payload.run as HarnessRun, ...currentProject.harness_trace]
+      }));
+      setInspectorTab("director");
+    } finally {
+      setIsGeneratingDiagnosis(false);
+    }
+  }
+
   async function generateDirectionsFromApi() {
     setIsGeneratingDirections(true);
 
@@ -292,6 +335,136 @@ export default function Home() {
       setInspectorTab("director");
     } finally {
       setIsGeneratingDirections(false);
+    }
+  }
+
+  async function generateBriefFromApi() {
+    setIsGeneratingBrief(true);
+
+    try {
+      const response = await fetch("/api/adaptation/generate-brief", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          project,
+          directionId: selectedDirection.id
+        })
+      });
+      const payload = (await response.json()) as {
+        brief?: ScreenplayProject["adaptation_brief"];
+        run?: HarnessRun;
+        error?: string;
+      };
+
+      if (!response.ok || !payload.brief || !payload.run) {
+        setProject((currentProject) => ({
+          ...currentProject,
+          harness_trace: [
+            payload.run ?? createClientFailedRun("generate_brief", payload.error ?? "改编简报生成失败。"),
+            ...currentProject.harness_trace
+          ]
+        }));
+        setInspectorTab("trace");
+        return;
+      }
+
+      setProject((currentProject) => ({
+        ...currentProject,
+        adaptation_brief: payload.brief ?? currentProject.adaptation_brief,
+        harness_trace: [payload.run as HarnessRun, ...currentProject.harness_trace]
+      }));
+      setInspectorTab("director");
+    } finally {
+      setIsGeneratingBrief(false);
+    }
+  }
+
+  async function generateBlueprintFromApi() {
+    setIsGeneratingBlueprint(true);
+
+    try {
+      const response = await fetch("/api/adaptation/generate-blueprint", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          project,
+          directionId: selectedDirection.id
+        })
+      });
+      const payload = (await response.json()) as {
+        scene_blueprint?: ScreenplayProject["scene_blueprint"];
+        run?: HarnessRun;
+        error?: string;
+      };
+
+      if (!response.ok || !payload.scene_blueprint || !payload.run) {
+        setProject((currentProject) => ({
+          ...currentProject,
+          harness_trace: [
+            payload.run ?? createClientFailedRun("generate_blueprint", payload.error ?? "场景蓝图生成失败。"),
+            ...currentProject.harness_trace
+          ]
+        }));
+        setInspectorTab("trace");
+        return;
+      }
+
+      setProject((currentProject) => ({
+        ...currentProject,
+        scene_blueprint: payload.scene_blueprint ?? currentProject.scene_blueprint,
+        harness_trace: [payload.run as HarnessRun, ...currentProject.harness_trace]
+      }));
+      setInspectorTab("director");
+    } finally {
+      setIsGeneratingBlueprint(false);
+    }
+  }
+
+  async function generateScreenplayFromApi() {
+    setIsGeneratingScreenplay(true);
+
+    try {
+      const response = await fetch("/api/adaptation/generate-screenplay", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          project,
+          directionId: selectedDirection.id
+        })
+      });
+      const payload = (await response.json()) as {
+        scenes?: ScreenplayProject["scenes"];
+        run?: HarnessRun;
+        error?: string;
+      };
+
+      if (!response.ok || !payload.scenes || !payload.run) {
+        setProject((currentProject) => ({
+          ...currentProject,
+          harness_trace: [
+            payload.run ?? createClientFailedRun("generate_screenplay", payload.error ?? "剧本生成失败。"),
+            ...currentProject.harness_trace
+          ]
+        }));
+        setInspectorTab("trace");
+        return;
+      }
+
+      setProject((currentProject) => ({
+        ...currentProject,
+        scenes: payload.scenes ?? currentProject.scenes,
+        harness_trace: [payload.run as HarnessRun, ...currentProject.harness_trace]
+      }));
+      setSelectedSceneId(payload.scenes[0].id);
+      setInspectorTab("validation");
+    } finally {
+      setIsGeneratingScreenplay(false);
     }
   }
 
@@ -363,7 +536,11 @@ export default function Home() {
             sourceParseError={sourceParseError}
             sourceSearchQuery={sourceSearchQuery}
             sourceSearchResults={sourceSearchResults}
+            isGeneratingDiagnosis={isGeneratingDiagnosis}
             isGeneratingDirections={isGeneratingDirections}
+            isGeneratingBrief={isGeneratingBrief}
+            isGeneratingBlueprint={isGeneratingBlueprint}
+            isGeneratingScreenplay={isGeneratingScreenplay}
             onSelectDirection={setSelectedDirectionId}
             onSelectScene={setSelectedSceneId}
             onSelectChunk={setSelectedChunkId}
@@ -373,7 +550,11 @@ export default function Home() {
             onImportSource={() => importSourceText(sourceDraft)}
             onImportSourceFile={importSourceFile}
             onSourceSearchQueryChange={setSourceSearchQuery}
+            onGenerateDiagnosis={generateDiagnosisFromApi}
             onGenerateDirections={generateDirectionsFromApi}
+            onGenerateBrief={generateBriefFromApi}
+            onGenerateBlueprint={generateBlueprintFromApi}
+            onGenerateScreenplay={generateScreenplayFromApi}
           />
           <InspectorPanel
             project={project}
@@ -539,7 +720,11 @@ function AdaptationCanvas({
   sourceParseError,
   sourceSearchQuery,
   sourceSearchResults,
+  isGeneratingDiagnosis,
   isGeneratingDirections,
+  isGeneratingBrief,
+  isGeneratingBlueprint,
+  isGeneratingScreenplay,
   onSelectDirection,
   onSelectScene,
   onSelectChunk,
@@ -549,7 +734,11 @@ function AdaptationCanvas({
   onImportSource,
   onImportSourceFile,
   onSourceSearchQueryChange,
-  onGenerateDirections
+  onGenerateDiagnosis,
+  onGenerateDirections,
+  onGenerateBrief,
+  onGenerateBlueprint,
+  onGenerateScreenplay
 }: {
   project: ScreenplayProject;
   activeStage: StageId;
@@ -560,7 +749,11 @@ function AdaptationCanvas({
   sourceParseError: string | null;
   sourceSearchQuery: string;
   sourceSearchResults: SourceSearchResult[];
+  isGeneratingDiagnosis: boolean;
   isGeneratingDirections: boolean;
+  isGeneratingBrief: boolean;
+  isGeneratingBlueprint: boolean;
+  isGeneratingScreenplay: boolean;
   onSelectDirection: (id: string) => void;
   onSelectScene: (id: string) => void;
   onSelectChunk: (id: string) => void;
@@ -570,7 +763,11 @@ function AdaptationCanvas({
   onImportSource: () => void;
   onImportSourceFile: (event: ChangeEvent<HTMLInputElement>) => void;
   onSourceSearchQueryChange: (value: string) => void;
+  onGenerateDiagnosis: () => void;
   onGenerateDirections: () => void;
+  onGenerateBrief: () => void;
+  onGenerateBlueprint: () => void;
+  onGenerateScreenplay: () => void;
 }) {
   const mode = modeTitles[activeStage];
   const action = stageActions[activeStage];
@@ -619,7 +816,13 @@ function AdaptationCanvas({
           onSourceSearchQueryChange={onSourceSearchQueryChange}
         />
       ) : null}
-      {activeStage === "diagnosis" ? <StoryDiagnosis project={project} /> : null}
+      {activeStage === "diagnosis" ? (
+        <StoryDiagnosis
+          project={project}
+          isGeneratingDiagnosis={isGeneratingDiagnosis}
+          onGenerateDiagnosis={onGenerateDiagnosis}
+        />
+      ) : null}
       {activeStage === "directions" ? (
         <DirectionBoard
           project={project}
@@ -630,13 +833,21 @@ function AdaptationCanvas({
           onGenerateDirections={onGenerateDirections}
         />
       ) : null}
-      {activeStage === "brief" ? <BriefSheet project={project} /> : null}
+      {activeStage === "brief" ? (
+        <BriefSheet
+          project={project}
+          isGeneratingBrief={isGeneratingBrief}
+          onGenerateBrief={onGenerateBrief}
+        />
+      ) : null}
       {activeStage === "blueprint" ? (
         <BlueprintBoard
           project={project}
           selectedSceneId={selectedSceneId}
           onSelectScene={onSelectScene}
           onOpenInspector={onOpenInspector}
+          isGeneratingBlueprint={isGeneratingBlueprint}
+          onGenerateBlueprint={onGenerateBlueprint}
         />
       ) : null}
       {activeStage === "screenplay" ? (
@@ -645,6 +856,8 @@ function AdaptationCanvas({
           selectedSceneId={selectedSceneId}
           onSelectScene={onSelectScene}
           onOpenInspector={onOpenInspector}
+          isGeneratingScreenplay={isGeneratingScreenplay}
+          onGenerateScreenplay={onGenerateScreenplay}
         />
       ) : null}
       {activeStage === "compare" ? <CompareMode project={project} /> : null}
@@ -788,8 +1001,17 @@ function SourceWorkspace({
   );
 }
 
-function StoryDiagnosis({ project }: { project: ScreenplayProject }) {
+function StoryDiagnosis({
+  project,
+  isGeneratingDiagnosis,
+  onGenerateDiagnosis
+}: {
+  project: ScreenplayProject;
+  isGeneratingDiagnosis: boolean;
+  onGenerateDiagnosis: () => void;
+}) {
   const diagnosis = project.story_diagnosis;
+  const sourceChunkCount = project.source.chapters.flatMap((chapter) => chapter.chunks).length;
   const items = [
     ["核心冲突", diagnosis.core_conflict],
     ["主角目标", diagnosis.protagonist_goal],
@@ -812,6 +1034,23 @@ function StoryDiagnosis({ project }: { project: ScreenplayProject }) {
         ))}
       </div>
       <div className="diagnosis-side">
+        <div className="diagnosis-action">
+          <p className="eyebrow">Source Intelligence</p>
+          <h3>先把原文读成可改编判断。</h3>
+          <div className="mini-metrics">
+            <span>{project.source.chapters.length} 章</span>
+            <span>{sourceChunkCount} 段依据</span>
+            <span>JSON 校验</span>
+          </div>
+          <button
+            className="primary-button full-width board-action"
+            onClick={onGenerateDiagnosis}
+            disabled={isGeneratingDiagnosis}
+          >
+            <Sparkles size={16} />
+            {isGeneratingDiagnosis ? "生成中..." : "AI 生成诊断"}
+          </button>
+        </div>
         <div className="risk-board">
           <h3>改编风险</h3>
           <ul>
@@ -914,7 +1153,15 @@ function createClientFailedRun(step: string, error: string): HarnessRun {
   };
 }
 
-function BriefSheet({ project }: { project: ScreenplayProject }) {
+function BriefSheet({
+  project,
+  isGeneratingBrief,
+  onGenerateBrief
+}: {
+  project: ScreenplayProject;
+  isGeneratingBrief: boolean;
+  onGenerateBrief: () => void;
+}) {
   const brief = project.adaptation_brief;
   const rows = [
     ["媒介", brief.target_medium],
@@ -926,8 +1173,14 @@ function BriefSheet({ project }: { project: ScreenplayProject }) {
   return (
     <article className="brief-sheet">
       <div className="sheet-head">
-        <p className="eyebrow">改编简报</p>
-        <h3>生成前先锁定这一版的创作边界。</h3>
+        <div>
+          <p className="eyebrow">改编简报</p>
+          <h3>生成前先锁定这一版的创作边界。</h3>
+        </div>
+        <button className="primary-button compact-button" onClick={onGenerateBrief} disabled={isGeneratingBrief}>
+          <Sparkles size={16} />
+          {isGeneratingBrief ? "生成中..." : "AI 生成简报"}
+        </button>
       </div>
       <div className="brief-fields">
         {rows.map(([label, value]) => (
@@ -940,19 +1193,19 @@ function BriefSheet({ project }: { project: ScreenplayProject }) {
       <div className="brief-editor">
         <label>
           <span>策略</span>
-          <textarea defaultValue={brief.strategy.join("\n")} aria-label="改编策略" />
+          <textarea value={brief.strategy.join("\n")} readOnly aria-label="改编策略" />
         </label>
         <label>
           <span>保留</span>
-          <textarea defaultValue={brief.preserve.join("\n")} aria-label="需要保留的内容" />
+          <textarea value={brief.preserve.join("\n")} readOnly aria-label="需要保留的内容" />
         </label>
         <label>
           <span>转换</span>
-          <textarea defaultValue={brief.transform.join("\n")} aria-label="需要转换的内容" />
+          <textarea value={brief.transform.join("\n")} readOnly aria-label="需要转换的内容" />
         </label>
         <label>
           <span>避免</span>
-          <textarea defaultValue={brief.avoid.join("\n")} aria-label="需要避免的内容" />
+          <textarea value={brief.avoid.join("\n")} readOnly aria-label="需要避免的内容" />
         </label>
       </div>
     </article>
@@ -963,42 +1216,65 @@ function BlueprintBoard({
   project,
   selectedSceneId,
   onSelectScene,
-  onOpenInspector
+  onOpenInspector,
+  isGeneratingBlueprint,
+  onGenerateBlueprint
 }: {
   project: ScreenplayProject;
   selectedSceneId: string;
   onSelectScene: (id: string) => void;
   onOpenInspector: (tab: InspectorTab) => void;
+  isGeneratingBlueprint: boolean;
+  onGenerateBlueprint: () => void;
 }) {
   return (
-    <div className="beat-board">
-      {project.scene_blueprint.map((blueprint) => {
-        const selected = selectedSceneId.replace("scene", "blueprint") === blueprint.id;
+    <div className="blueprint-workspace">
+      <section className="board-notes">
+        <p className="eyebrow">Scene Blueprint</p>
+        <h3>先把戏拆成可拍的节拍。</h3>
+        <div className="mini-metrics">
+          <span>{project.scene_blueprint.length} 场</span>
+          <span>{project.adaptation_brief.source_refs.length} 段简报依据</span>
+          <span>{project.adaptation_brief.target_medium}</span>
+        </div>
+        <button
+          className="primary-button full-width board-action"
+          onClick={onGenerateBlueprint}
+          disabled={isGeneratingBlueprint}
+        >
+          <Sparkles size={16} />
+          {isGeneratingBlueprint ? "生成中..." : "AI 生成蓝图"}
+        </button>
+      </section>
+      <div className="beat-board">
+        {project.scene_blueprint.map((blueprint) => {
+          const selected = selectedSceneId.replace("scene", "blueprint") === blueprint.id;
 
-        return (
-          <button
-            key={blueprint.id}
-            className={`beat-card ${selected ? "is-selected" : ""}`}
-            onClick={() => {
-              const matchingScene = blueprint.id.replace("blueprint", "scene");
-              onSelectScene(matchingScene);
-              onOpenInspector("director");
-            }}
-          >
-            <span className="card-topline">
-              <span>{blueprint.estimated_duration}</span>
-              <span>{decisionLabels[blueprint.adaptation_decision.type]}</span>
-            </span>
-            <span className="card-title">{blueprint.title}</span>
-            <span className="card-copy">{blueprint.adaptation_decision.reason}</span>
-            <span className="source-row">
-              {blueprint.source_refs.map((ref) => (
-                <span key={ref}>{ref}</span>
-              ))}
-            </span>
-          </button>
-        );
-      })}
+          return (
+            <button
+              key={blueprint.id}
+              className={`beat-card ${selected ? "is-selected" : ""}`}
+              onClick={() => {
+                const matchingScene = blueprint.id.replace("blueprint", "scene");
+                onSelectScene(matchingScene);
+                onOpenInspector("director");
+              }}
+            >
+              <span className="card-topline">
+                <span>{blueprint.estimated_duration}</span>
+                <span>{decisionLabels[blueprint.adaptation_decision.type]}</span>
+              </span>
+              <span className="card-title">{blueprint.title}</span>
+              <span className="card-copy">{blueprint.adaptation_decision.reason}</span>
+              <span className="source-row">
+                {blueprint.source_refs.map((ref) => (
+                  <span key={ref}>{ref}</span>
+                ))}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1007,15 +1283,38 @@ function DraftDesk({
   project,
   selectedSceneId,
   onSelectScene,
-  onOpenInspector
+  onOpenInspector,
+  isGeneratingScreenplay,
+  onGenerateScreenplay
 }: {
   project: ScreenplayProject;
   selectedSceneId: string;
   onSelectScene: (id: string) => void;
   onOpenInspector: (tab: InspectorTab) => void;
+  isGeneratingScreenplay: boolean;
+  onGenerateScreenplay: () => void;
 }) {
   return (
     <div className="draft-desk">
+      <section className="draft-control">
+        <div>
+          <p className="eyebrow">Screenplay Draft</p>
+          <h3>从场景蓝图生成结构化剧本 JSON。</h3>
+        </div>
+        <div className="mini-metrics">
+          <span>{project.scene_blueprint.length} 个蓝图</span>
+          <span>{project.scenes.length} 场草稿</span>
+          <span>JSON 校验</span>
+        </div>
+        <button
+          className="primary-button full-width board-action"
+          onClick={onGenerateScreenplay}
+          disabled={isGeneratingScreenplay}
+        >
+          <Sparkles size={16} />
+          {isGeneratingScreenplay ? "生成中..." : "AI 生成剧本"}
+        </button>
+      </section>
       <div className="scene-index">
         {project.scenes.map((scene) => (
           <button

@@ -11,14 +11,14 @@ Current accepted UI baseline:
 - Microcopy + Action Semantics pass is complete: UI copy uses natural Chinese adaptation-workbench language, and unavailable actions are marked `待接入`.
 - Source import pass is complete for pasted text and `.txt`: chapter parsing, source chunks, imported-source replacement, lightweight search, and source evidence display are connected.
 - Knowledge pack pass is complete for local metadata, markdown files, selection reasons, Inspector display, and local JSON harness preview trace.
-- Compatible provider pass is complete for DashScope/OpenAI-compatible config, direction generation route, and Studio UI entry.
+- Compatible provider pass is complete for DashScope/OpenAI-compatible config, story diagnosis route, direction generation route, brief generation route, blueprint generation route, screenplay generation route, and Studio UI entries.
 
-Do not continue structural UI refactors, color tuning, font tuning, or shadow tuning unless the user explicitly asks. The next slice should continue API-backed JSON generation for diagnosis, brief, blueprint, and screenplay.
+Do not continue structural UI refactors, color tuning, font tuning, or shadow tuning unless the user explicitly asks. The next slice should continue creative iteration or demo continuity through scene revision or local persistence.
 
 Known action semantics:
 
-- Available mock/UI actions: stage switching, pasted-text import, `.txt` import, source search, selecting source chunks, selecting directions, API-backed direction generation when env is configured, viewing active knowledge packs, local JSON harness preview, Inspector tab switching, opening/closing settings, viewing `依据与检查`, and `导出 YAML`.
-- Disabled pending actions: `生成剧本（待接入）` and `保存设置（待接入）`.
+- Available mock/UI actions: stage switching, pasted-text import, `.txt` import, source search, selecting source chunks, API-backed story diagnosis when env is configured, selecting directions, API-backed direction generation when env is configured, API-backed Adaptation Brief generation when env is configured, API-backed Scene Blueprint generation when env is configured, viewing active knowledge packs, local JSON harness preview, Inspector tab switching, opening/closing settings, viewing `依据与检查`, and `导出 YAML`.
+- Disabled pending action: `保存设置（待接入）`.
 
 These tasks are execution checklists inside compact slices. They are not meant to force one tiny task per development round.
 
@@ -202,14 +202,14 @@ Acceptance:
 - Generate directions.
 - Build Adaptation Brief.
 - Generate Scene Blueprint.
-- Generate screenplay JSON.
+- Generate screenplay JSON. Completed for API-backed screenplay generation through the JSON-first harness.
 - Generate YAML only from validated JSON.
 
 Acceptance:
 
 - Outputs are JSON-first.
 - Invalid output is rejected or repaired.
-- Final screenplay validates.
+- Final screenplay validates. Completed for API-backed screenplay generation before YAML export.
 - YAML export succeeds.
 
 ## Slice 5 Checklist: Scene Revision, Versioning, Compare, And Demo Polish

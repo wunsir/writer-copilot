@@ -302,7 +302,7 @@ The right inspector should support:
 - Harness Trace.
 - Settings.
 
-Current UI supports the main flow, stage-specific surfaces, pasted-text and `.txt` import, chapter parsing, source chunks, lightweight search, imported-source evidence display, active knowledge packs, local JSON harness preview, trace recording, and API-backed direction generation when local env is configured. API-backed story diagnosis, brief, blueprint, screenplay generation, `.docx` import, settings persistence, and source-ref jumping remain future implementation work.
+Current UI supports the main flow, stage-specific surfaces, pasted-text and `.txt` import, chapter parsing, source chunks, lightweight search, imported-source evidence display, active knowledge packs, local JSON harness preview, trace recording, and API-backed story diagnosis, direction generation, brief generation, blueprint generation, and screenplay JSON generation when local env is configured. `.docx` import, settings persistence, source-ref jumping, scene revision, and durable versioning remain future implementation work.
 
 ### Product Settings
 

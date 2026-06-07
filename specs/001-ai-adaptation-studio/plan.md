@@ -16,10 +16,10 @@ Slices 1, 2, and the first source-import slice are implemented as the current pr
 - Stage 1 visual shell, Stage 2 interaction modes, and Microcopy + Action Semantics pass are complete enough for handoff.
 - Pasted-text and `.txt` import, chapter parsing, source chunks, and lightweight source search are connected.
 - Knowledge pack files, metadata, selection, Inspector display, local JSON harness preview, and trace recording are connected.
-- DashScope/OpenAI-compatible provider config, direction generation route, and UI entry are connected. Live calls require ignored local env configuration.
-- API-backed story diagnosis, brief, blueprint, screenplay generation, `.docx` import, settings save, durable persistence, and source-ref jumping are not connected yet.
+- DashScope/OpenAI-compatible provider config, story diagnosis route, direction generation route, brief generation route, blueprint generation route, screenplay generation route, and UI entries are connected. Live calls require ignored local env configuration.
+- `.docx` import, settings save, durable persistence, and source-ref jumping are not connected yet.
 
-Do not spend the next slice on broad UI restructuring, color, font, or shadow polish. The next implementation slice should continue API-backed JSON generation for diagnosis, brief, blueprint, and screenplay.
+Do not spend the next slice on broad UI restructuring, color, font, or shadow polish. The next implementation slice should continue creative iteration or demo continuity through scene revision or local persistence.
 
 ## Slice 1: Scaffold And Studio Shell
 
@@ -114,7 +114,7 @@ Verification:
 
 Goal: Replace mock generation with a real JSON-first adaptation runtime.
 
-Status: Partially implemented. Knowledge packs, local JSON validation, repair path, trace recording, compatible provider config, direction generation route, and UI entry are implemented. Downstream diagnosis, brief, blueprint, and screenplay generation remain future work.
+Status: Partially implemented. Knowledge packs, local JSON validation, repair path, trace recording, compatible provider config, story diagnosis route, direction generation route, brief generation route, blueprint generation route, screenplay generation route, and UI entries are implemented. Scene revision remains future work.
 
 Scope:
 
@@ -138,10 +138,10 @@ Verification:
 
 - Knowledge packs can be selected from target medium, strategy, and tone. Completed for local selection.
 - Harness can record local JSON-first preview runs with source refs and knowledge packs. Completed without API calls.
-- Harness can run from imported source to diagnosis. Not started.
+- Harness can run from imported source to diagnosis. Completed for API-backed story diagnosis with compact source chunks and trace recording.
 - Harness can generate dynamic directions using source refs and knowledge packs. Completed for API-backed direction generation with a compact 2-direction interactive call.
-- User can choose or adjust a direction and build an Adaptation Brief.
-- Harness can generate Scene Blueprint and screenplay JSON.
+- User can choose or adjust a direction and build an Adaptation Brief. Completed for API-backed brief generation from the selected direction.
+- Harness can generate Scene Blueprint and screenplay JSON. Completed for API-backed Scene Blueprint generation and API-backed screenplay JSON generation.
 - Invalid AI output is rejected or repaired.
 - Final YAML validates.
 - Trace shows step status, model, source chunks, knowledge packs, validation, repairs, and errors.

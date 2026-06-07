@@ -41,9 +41,9 @@ Current implemented state:
 - Chapter parsing, stable source chunks, basic keyword/name extraction, and lightweight source search are connected.
 - Knowledge pack markdown files, metadata, selection reasons, and Inspector display are connected.
 - Local JSON-first harness preview and trace recording are connected without external API calls.
-- DashScope/OpenAI-compatible provider config, API route, and UI entry for API-backed direction generation are connected. Live calls require ignored local env configuration.
+- DashScope/OpenAI-compatible provider config, API routes, and UI entries for API-backed story diagnosis, direction generation, Adaptation Brief generation, Scene Blueprint generation, and screenplay JSON generation are connected. Live calls require ignored local env configuration.
 - UI copy should use natural Chinese adaptation-workbench language, not engineering labels.
-- API-backed story diagnosis, brief, blueprint, screenplay generation, `.docx` import, durable persistence, source-ref jumping, and settings save are not connected yet and should stay visibly marked as `待接入` until implemented.
+- `.docx` import, durable persistence, source-ref jumping, and settings save are not connected yet and should stay visibly marked as `待接入` until implemented.
 
 ## Studio Interaction Direction
 
