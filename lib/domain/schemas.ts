@@ -167,6 +167,8 @@ export const ScreenplayProjectSchema = z.object({
 });
 
 export type SourceChunk = z.infer<typeof SourceChunkSchema>;
+export type SourceChapter = z.infer<typeof SourceChapterSchema>;
+export type HarnessRun = z.infer<typeof HarnessRunSchema>;
 export type ScreenplayProject = z.infer<typeof ScreenplayProjectSchema>;
 export type ValidationReport = z.infer<typeof ValidationReportSchema>;
 export type ValidationIssue = z.infer<typeof ValidationIssueSchema>;

@@ -6,7 +6,7 @@ It is not intended to be a simple "novel in, YAML out" form tool. The product sh
 
 ## Current Repository Status
 
-This repository now has an initial Next.js Studio scaffold with sample data, domain validation, YAML export, and a mock adaptation flow.
+This repository now has an initial Next.js Studio scaffold with sample data, domain validation, YAML export, a mock adaptation flow, real text/`.txt` source import with lightweight source retrieval, knowledge pack selection, a local JSON-first harness preview, and a DashScope/OpenAI-compatible provider boundary for direction generation.
 
 Start with:
 
@@ -17,20 +17,39 @@ Start with:
 - `specs/001-ai-adaptation-studio/plan.md` for staged delivery.
 - `specs/001-ai-adaptation-studio/tasks.md` for executable task slices.
 
-## Planned Stack
+## Current Stack
 
-The exact scaffold should be confirmed before dependencies are added. The current recommended direction is:
+The current scaffold uses:
 
 - Next.js
+- React
 - TypeScript
 - Tailwind CSS
 - Zod
 - YAML generation/parsing utility
-- Lightweight client-side source search such as MiniSearch or Fuse.js
-- Local persistence through localStorage or IndexedDB
-- OpenAI-compatible model API behind a small adaptation harness
+- Vitest
+- ESLint
 
-Do not add these dependencies until the project scaffold task is explicitly started.
+Not yet connected:
+
+- `.docx` import.
+- Local persistence.
+- API-backed screenplay generation.
+
+Do not add production dependencies without approval.
+
+## Model Configuration
+
+Copy `.env.example` to `.env.local` and set `DASHSCOPE_API_KEY` locally. `.env.local` is git-ignored.
+
+The default compatible endpoint and model are:
+
+```text
+DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+DASHSCOPE_MODEL=qwen3.6-27b
+```
+
+Do not commit real API keys.
 
 ## Local Development
 
@@ -61,8 +80,18 @@ Development should move in compact product slices:
 
 1. Scaffold and Studio shell.
 2. Domain core, sample data, and mock full-flow Studio.
-3. Real source import, chapter parsing, source chunks, and lightweight retrieval.
-4. Knowledge packs, AI harness, JSON-first generation, validation, and YAML export.
+3. Real source import, chapter parsing, source chunks, and lightweight retrieval. Completed for pasted text and `.txt`; `.docx` remains future work.
+4. Knowledge packs, local JSON-first harness preview, and API-backed direction generation route. Completed; live calls require local env configuration.
 5. Scene revision, creative versioning, compare, persistence, docs, and demo polish.
 
 The first usable screen should be the Studio itself, not a marketing landing page.
+
+## Current Handoff Notes
+
+The accepted UI baseline is the current Studio shell plus Stage 2 interaction pass and Microcopy + Action Semantics pass. Do not continue structural UI refactors, color tuning, font tuning, or shadow tuning unless explicitly requested.
+
+Available UI/mock actions include stage switching, pasted-text import, `.txt` import, source search, selecting source chunks, selecting directions, API-backed direction generation when local env is configured, selecting scenes, viewing active knowledge packs, running local JSON harness preview, Inspector tab switching, opening settings, and exporting YAML.
+
+Pending disabled actions are `生成剧本（待接入）` and `保存设置（待接入）`.
+
+Recommended next slice: API-backed story diagnosis, Adaptation Brief, Scene Blueprint, and screenplay JSON generation, all through the JSON-first harness.

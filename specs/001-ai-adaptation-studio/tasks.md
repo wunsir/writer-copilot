@@ -2,7 +2,23 @@
 
 ## Current State
 
-The repository has an initial Next.js scaffold, baseline tooling, domain validation utilities, YAML export, sample project data, and a mock Studio shell. Continue to verify the current state before assuming a specific capability is complete.
+The repository has an initial Next.js scaffold, baseline tooling, domain validation utilities, YAML export, sample project data, and a mock full-flow Studio shell.
+
+Current accepted UI baseline:
+
+- Stage 1 visual shell pass is complete: modern minimal product shell, narrower `作品目录`, primary center canvas, right `依据与检查`, and no landing page.
+- Stage 2 interaction pass is complete: stage navigation changes the center working mode, and the Inspector follows selected source chunks, directions, scenes, and versions.
+- Microcopy + Action Semantics pass is complete: UI copy uses natural Chinese adaptation-workbench language, and unavailable actions are marked `待接入`.
+- Source import pass is complete for pasted text and `.txt`: chapter parsing, source chunks, imported-source replacement, lightweight search, and source evidence display are connected.
+- Knowledge pack pass is complete for local metadata, markdown files, selection reasons, Inspector display, and local JSON harness preview trace.
+- Compatible provider pass is complete for DashScope/OpenAI-compatible config, direction generation route, and Studio UI entry.
+
+Do not continue structural UI refactors, color tuning, font tuning, or shadow tuning unless the user explicitly asks. The next slice should continue API-backed JSON generation for diagnosis, brief, blueprint, and screenplay.
+
+Known action semantics:
+
+- Available mock/UI actions: stage switching, pasted-text import, `.txt` import, source search, selecting source chunks, selecting directions, API-backed direction generation when env is configured, viewing active knowledge packs, local JSON harness preview, Inspector tab switching, opening/closing settings, viewing `依据与检查`, and `导出 YAML`.
+- Disabled pending actions: `生成剧本（待接入）` and `保存设置（待接入）`.
 
 These tasks are execution checklists inside compact slices. They are not meant to force one tiny task per development round.
 
@@ -42,9 +58,9 @@ Acceptance:
 
 - First screen is the Studio, not a landing page.
 - Add three-panel layout:
-  - Project Binder.
+  - `作品目录`.
   - Adaptation Canvas.
-  - Object Inspector.
+  - `依据与检查` / `选择详情`.
 - Add responsive behavior.
 - Add basic stage navigation.
 - Disable framework dev UI that appears inside the product viewport.
@@ -59,6 +75,7 @@ Acceptance:
 - Left panel can enter or expand at least one focused creation state. Completed for the initial mock shell.
 - Framework dev UI does not appear in the product viewport.
 - Settings open in a separate modal and do not replace the right Inspector. Completed for the current shell.
+- Stage 1 visual shell uses the accepted modern minimal baseline. Completed.
 
 ## Slice 2 Checklist: Domain Core And Mock Full Flow
 
@@ -70,8 +87,8 @@ Acceptance:
 
 Acceptance:
 
-- Sample data parses through schemas.
-- Invalid required fields fail.
+- Sample data parses through schemas. Completed.
+- Invalid required fields fail. Completed.
 
 ### 2.2 Validation And YAML
 
@@ -85,9 +102,9 @@ Acceptance:
 
 Acceptance:
 
-- Valid sample passes.
-- Broken samples fail with specific issue records.
-- YAML contains source refs and validation report.
+- Valid sample passes. Completed.
+- Broken samples fail with specific issue records. Completed.
+- YAML contains source refs and validation report. Completed.
 
 ### 2.3 Mock Studio Flow
 
@@ -106,11 +123,12 @@ Acceptance:
 
 Acceptance:
 
-- User can move through the full adaptation flow.
-- Direction cards include source refs.
-- Scene cards include adaptation decisions.
-- Inspector changes when selecting direction, scene, source ref, version, or validation issue.
-- Settings show workflow preferences for creation, output, model, workspace, and reading.
+- User can move through the full adaptation flow. Completed for mock data.
+- Direction cards include source refs. Completed for mock data.
+- Scene cards include adaptation decisions. Completed for mock data.
+- Inspector changes when selecting direction, scene, source chunk, version, YAML, or validation issue. Completed for current mock UI.
+- Settings show workflow preferences for creation, output, model, workspace, and reading. Completed as a mock/settings surface; saving is still `待接入`.
+- UI copy uses natural Chinese adaptation-workbench language and avoids engineering labels. Completed.
 
 ## Slice 3 Checklist: Real Source Import And Lightweight Retrieval
 
@@ -124,8 +142,8 @@ Acceptance:
 
 Acceptance:
 
-- 3+ chapter sample parses.
-- Too-few-chapter input shows actionable feedback.
+- 3+ chapter sample parses. Completed for pasted text and `.txt`.
+- Too-few-chapter input shows actionable feedback. Completed.
 
 ### 3.2 Source Chunks And Search
 
@@ -136,9 +154,9 @@ Acceptance:
 
 Acceptance:
 
-- Chunks are generated.
-- Search retrieves relevant chunks.
-- Source refs resolve in the inspector.
+- Chunks are generated. Completed.
+- Search retrieves relevant chunks. Completed.
+- Source refs resolve in the inspector. Completed.
 
 ### 3.3 Replace Sample Source
 
@@ -147,8 +165,8 @@ Acceptance:
 
 Acceptance:
 
-- Imported source updates Chapter Map and Evidence views.
-- Mock directions and scenes can reference imported chunk IDs.
+- Imported source updates Chapter Map and Evidence views. Completed.
+- Mock directions and scenes can reference imported chunk IDs. Completed.
 
 ## Slice 4 Checklist: Knowledge Packs And AI Harness
 
@@ -161,8 +179,8 @@ Acceptance:
 
 Acceptance:
 
-- Packs can be listed and loaded.
-- Active packs are visible in the Inspector.
+- Packs can be listed and loaded. Completed.
+- Active packs are visible in the Inspector. Completed.
 
 ### 4.2 Harness Runtime
 
@@ -175,8 +193,8 @@ Acceptance:
 
 Acceptance:
 
-- Step trace records started, succeeded, failed, validation, repair, and error states.
-- Missing API key produces clear error without leaking secrets.
+- Step trace records started, succeeded, failed, validation, repair, and error states. Completed for local JSON runner.
+- Missing API key produces clear error without leaking secrets. Completed for direction generation provider.
 
 ### 4.3 AI Generation Steps
 
