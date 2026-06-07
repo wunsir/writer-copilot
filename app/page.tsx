@@ -13,7 +13,6 @@ import {
   Layers3,
   Library,
   ListChecks,
-  MessageSquareText,
   PanelLeftOpen,
   Play,
   ScrollText,
@@ -57,7 +56,7 @@ const stages: Array<{
   { id: "source", label: "原文", status: "待处理", count: "3 章", hint: "导入、分章、依据", icon: BookOpen },
   { id: "diagnosis", label: "故事诊断", status: "已生成", count: "5 项", hint: "冲突、人物、风险", icon: Search },
   { id: "directions", label: "改编方向", status: "进行中", count: "2 版", hint: "选择或混合路线", icon: Sparkles },
-  { id: "brief", label: "改编简报", status: "已生成", count: "1 版", hint: "创作约束", icon: ClipboardCheck },
+  { id: "brief", label: "改编简报", status: "已生成", count: "1 版", hint: "创作边界", icon: ClipboardCheck },
   { id: "blueprint", label: "场景蓝图", status: "已生成", count: "2 场", hint: "先看场，再出稿", icon: Layers3 },
   { id: "screenplay", label: "剧本草稿", status: "已校验", count: "2 场", hint: "对白、动作、YAML", icon: ScrollText },
   { id: "compare", label: "版本对比", status: "待处理", count: "3 版", hint: "变化和回退", icon: GitCompare }
@@ -80,18 +79,18 @@ const modeTitles: Record<StageId, { title: string; subtitle: string }> = {
   source: { title: "原文工作台", subtitle: "导入、分章、抽取可追溯依据。" },
   diagnosis: { title: "故事诊断", subtitle: "先判断故事怎么改，再进入生成。" },
   directions: { title: "方向板", subtitle: "把不同改编路线摆在台面上比较。" },
-  brief: { title: "改编简报", subtitle: "把选择沉淀成后续生成必须遵守的约束。" },
+  brief: { title: "改编简报", subtitle: "把选择沉淀成后续创作要遵守的边界。" },
   blueprint: { title: "场景蓝图", subtitle: "像索引卡一样安排场次、节拍和改编理由。" },
   screenplay: { title: "剧本草稿", subtitle: "检查场景、对白、角色和 YAML 是否一致。" },
   compare: { title: "版本对比", subtitle: "看清楚每次修改到底改变了什么。" }
 };
 
 const binderCopy: Record<StageId, string> = {
-  source: "这里会承载真实导入、章节识别、段落切分和 source refs。当前先用样例原文展示后续结构。",
+  source: "这里会承载真实导入、章节识别、段落切分和原文依据。当前先用样例原文展示工作方式。",
   diagnosis: "诊断不应该是装饰卡片，它会决定后续推荐什么方向、避开什么风险。",
-  directions: "方向是创作决策，不是 prompt 模板。选择后会影响简报、蓝图和剧本。",
-  brief: "简报是生成前的创作合同，后续会支持用户编辑和锁定条款。",
-  blueprint: "蓝图先于剧本，避免模型直接把小说硬转成 YAML。",
+  directions: "改编路线是创作选择。选定后，会影响改编简报、场景蓝图和剧本草稿。",
+  brief: "简报是开写前的创作约定，后续会支持用户编辑和确认条款。",
+  blueprint: "先搭场景蓝图，再写剧本草稿，避免把小说直接硬转成格式文件。",
   screenplay: "草稿会承接局部修订、校验和导出。",
   compare: "版本对比会服务恢复、分支方向和场景级修改历史。"
 };
@@ -107,11 +106,26 @@ const decisionLabels: Record<string, string> = {
 
 const checkLabels: Record<string, string> = {
   schema_shape: "结构完整",
-  unique_scene_ids: "场景 ID",
-  character_references: "角色引用",
-  location_references: "地点引用",
+  unique_scene_ids: "场景编号",
+  character_references: "角色一致",
+  location_references: "地点一致",
   source_references: "原文依据",
   adaptation_decisions: "改编理由"
+};
+
+const stageActions: Record<StageId, { label: string; detail: string; tab: InspectorTab; disabled?: boolean }> = {
+  source: { label: "查看原文依据", detail: "下一步会整理章节切分，并检查每段原文依据是否可追溯。", tab: "evidence" },
+  diagnosis: { label: "查看诊断建议", detail: "先处理改编风险，再进入路线探索。", tab: "director" },
+  directions: { label: "采用此路线", detail: "采用后，这条改编路线会进入简报、场景蓝图和剧本草稿。", tab: "director" },
+  brief: { label: "确认简报条款", detail: "简报会成为后续写作时遵守的创作约定。", tab: "director" },
+  blueprint: { label: "检查场景蓝图", detail: "先看清每场戏的节拍、改写理由和原文依据。", tab: "evidence" },
+  screenplay: {
+    label: "生成剧本（待接入）",
+    detail: "真实生成功能接入后，会按当前简报和场景蓝图生成剧本草稿。",
+    tab: "validation",
+    disabled: true
+  },
+  compare: { label: "查看版本变化", detail: "版本恢复将在真实历史接入后开放。", tab: "timeline" }
 };
 
 export default function Home() {
@@ -119,15 +133,23 @@ export default function Home() {
   const [expandedStage, setExpandedStage] = useState<StageId | null>("directions");
   const [selectedDirectionId, setSelectedDirectionId] = useState(sampleProject.directions[0].id);
   const [selectedSceneId, setSelectedSceneId] = useState(sampleProject.scenes[0].id);
+  const [selectedChunkId, setSelectedChunkId] = useState(sampleProject.source.chapters[0].chunks[0].id);
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("director");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const validationReport = useMemo(() => validateScreenplayProject(sampleProject), []);
   const yamlPreview = useMemo(() => screenplayToYaml(sampleProject, validationReport), [validationReport]);
+  const sourceChunks = useMemo(
+    () => sampleProject.source.chapters.flatMap((chapter) => chapter.chunks),
+    []
+  );
   const selectedDirection =
     sampleProject.directions.find((direction) => direction.id === selectedDirectionId) ??
     sampleProject.directions[0];
   const selectedScene =
     sampleProject.scenes.find((scene) => scene.id === selectedSceneId) ?? sampleProject.scenes[0];
+  const selectedChunk = sourceChunks.find((chunk) => chunk.id === selectedChunkId) ?? sourceChunks[0];
+  const activeStageMeta = stages.find((stage) => stage.id === activeStage) ?? stages[0];
+  const activeAction = stageActions[activeStage];
 
   function activateStage(stage: StageId) {
     setActiveStage(stage);
@@ -157,18 +179,43 @@ export default function Home() {
     <main className="min-h-screen px-4 py-4 lg:px-6">
       <div className="mx-auto flex max-w-[1800px] flex-col gap-4">
         <header className="studio-header">
-          <div>
-            <p className="eyebrow">Writer Copilot</p>
-            <h1 className="brand-title">改编工作室</h1>
+          <div className="topbar-left">
+            <div className="product-mark">
+              <span>Writer Copilot</span>
+              <strong>雾站来信</strong>
+            </div>
+            <div className="topbar-divider" />
+            <div className="run-state">
+              <span className="status-dot is-running" />
+              <span>样例项目</span>
+              <strong>
+                {activeStageMeta.label} · {activeStageMeta.status}
+              </strong>
+            </div>
           </div>
+          <nav className="stage-pipeline" aria-label="改编流程">
+            {stages.map((stage) => (
+              <button
+                key={stage.id}
+                className={`stage-chip ${stage.id === activeStage ? "is-active" : ""}`}
+                onClick={() => activateStage(stage.id)}
+              >
+                {stage.label}
+              </button>
+            ))}
+          </nav>
           <div className="header-actions">
-            <button className="quiet-button" onClick={() => setSettingsOpen(true)}>
+            <button className="quiet-button compact-button" onClick={() => setSettingsOpen(true)}>
               <Settings size={16} />
               工作区设置
             </button>
-            <button className="pending-button" disabled>
+            <button
+              className="primary-button compact-button"
+              disabled={activeAction.disabled}
+              onClick={() => setInspectorTab(activeAction.tab)}
+            >
               <Play size={16} />
-              生成待接入
+              {activeAction.label}
             </button>
           </div>
         </header>
@@ -184,16 +231,20 @@ export default function Home() {
             activeStage={activeStage}
             selectedDirectionId={selectedDirectionId}
             selectedSceneId={selectedSceneId}
+            selectedChunkId={selectedChunkId}
             onSelectDirection={setSelectedDirectionId}
             onSelectScene={setSelectedSceneId}
+            onSelectChunk={setSelectedChunkId}
             onOpenInspector={setInspectorTab}
             onDownloadYaml={downloadYaml}
           />
           <InspectorPanel
+            activeStage={activeStage}
             tab={inspectorTab}
             onChangeTab={setInspectorTab}
             selectedDirection={selectedDirection}
             selectedScene={selectedScene}
+            selectedChunk={selectedChunk}
             yamlPreview={yamlPreview}
             validationReport={validationReport}
             onDownloadYaml={downloadYaml}
@@ -218,7 +269,7 @@ function ProjectBinder({
 }) {
   return (
     <aside className="binder-panel">
-      <PanelHeading eyebrow="项目 Binder" title="雾站来信" />
+      <PanelHeading eyebrow="作品目录" title="雾站来信" />
       <div className="binder-list">
         {stages.map((stage) => {
           const Icon = stage.icon;
@@ -244,7 +295,7 @@ function ProjectBinder({
                   className="expand-button"
                   onClick={() => onToggleExpanded(stage.id)}
                 >
-                  <PanelLeftOpen size={15} />
+                  {isExpanded ? <PanelLeftOpen size={15} /> : <ChevronRight size={15} />}
                 </button>
               </div>
               {isExpanded ? <BinderFocus stage={stage.id} /> : null}
@@ -261,9 +312,9 @@ function BinderFocus({ stage }: { stage: StageId }) {
     <div className="binder-focus">
       <p>{binderCopy[stage]}</p>
       {stage === "source" ? (
-        <button className="quiet-button full-width">
+        <button className="pending-button full-width" disabled>
           <Upload size={16} />
-          导入原文待接入
+          导入原文（待接入）
         </button>
       ) : null}
       {stage === "directions" ? (
@@ -288,33 +339,42 @@ function AdaptationCanvas({
   activeStage,
   selectedDirectionId,
   selectedSceneId,
+  selectedChunkId,
   onSelectDirection,
   onSelectScene,
+  onSelectChunk,
   onOpenInspector,
   onDownloadYaml
 }: {
   activeStage: StageId;
   selectedDirectionId: string;
   selectedSceneId: string;
+  selectedChunkId: string;
   onSelectDirection: (id: string) => void;
   onSelectScene: (id: string) => void;
+  onSelectChunk: (id: string) => void;
   onOpenInspector: (tab: InspectorTab) => void;
   onDownloadYaml: () => void;
 }) {
   const mode = modeTitles[activeStage];
+  const action = stageActions[activeStage];
 
   return (
     <section className={`canvas-panel mode-${activeStage}`}>
       <div className="canvas-head">
         <div>
-          <p className="eyebrow">主工作区</p>
+          <p className="eyebrow">当前工作</p>
           <h2 className="section-title">{mode.title}</h2>
           <span className="mode-subtitle">{mode.subtitle}</span>
         </div>
         <div className="toolbar">
-          <button className="primary-button" onClick={() => onOpenInspector("validation")}>
-            <CheckCircle2 size={16} />
-            检查结构
+          <button
+            className="primary-button"
+            disabled={action.disabled}
+            onClick={() => onOpenInspector(action.tab)}
+          >
+            <Play size={16} />
+            {action.label}
           </button>
           <button className="quiet-button" onClick={onDownloadYaml}>
             <ArrowDownToLine size={16} />
@@ -322,8 +382,18 @@ function AdaptationCanvas({
           </button>
         </div>
       </div>
+      <div className="next-action-strip">
+        <span>{action.detail}</span>
+        <button onClick={() => onOpenInspector(action.tab)}>查看依据与检查</button>
+      </div>
 
-      {activeStage === "source" ? <SourceWorkspace /> : null}
+      {activeStage === "source" ? (
+        <SourceWorkspace
+          selectedChunkId={selectedChunkId}
+          onSelectChunk={onSelectChunk}
+          onOpenInspector={onOpenInspector}
+        />
+      ) : null}
       {activeStage === "diagnosis" ? <StoryDiagnosis /> : null}
       {activeStage === "directions" ? (
         <DirectionBoard
@@ -361,7 +431,18 @@ function PanelHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
   );
 }
 
-function SourceWorkspace() {
+function SourceWorkspace({
+  selectedChunkId,
+  onSelectChunk,
+  onOpenInspector
+}: {
+  selectedChunkId: string;
+  onSelectChunk: (id: string) => void;
+  onOpenInspector: (tab: InspectorTab) => void;
+}) {
+  const chunks = sampleProject.source.chapters.flatMap((chapter) => chapter.chunks);
+  const selectedChunk = chunks.find((chunk) => chunk.id === selectedChunkId) ?? chunks[0];
+
   return (
     <div className="source-workspace">
       <div className="chapter-strip">
@@ -374,14 +455,31 @@ function SourceWorkspace() {
         ))}
       </div>
       <div className="source-reader">
-        {sampleProject.source.chapters.flatMap((chapter) =>
-          chapter.chunks.map((chunk) => (
-            <button key={chunk.id} className="chunk-item">
+        <div className="reader-copy">
+          <p className="eyebrow">阅读器</p>
+          <h3>{selectedChunk.summary}</h3>
+          <p>{selectedChunk.text}</p>
+          <div className="source-row">
+            {selectedChunk.keywords.map((keyword) => (
+              <span key={keyword}>{keyword}</span>
+            ))}
+          </div>
+        </div>
+        <div className="chunk-map">
+          {chunks.map((chunk) => (
+            <button
+              key={chunk.id}
+              className={`chunk-item ${chunk.id === selectedChunkId ? "is-selected" : ""}`}
+              onClick={() => {
+                onSelectChunk(chunk.id);
+                onOpenInspector("evidence");
+              }}
+            >
               <span>{chunk.id}</span>
-              {chunk.text}
+              {chunk.summary}
             </button>
-          ))
-        )}
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -397,7 +495,12 @@ function StoryDiagnosis() {
 
   return (
     <div className="diagnosis-grid">
-      <div className="stack">
+      <div className="diagnosis-report">
+        <div className="report-ruler">
+          <span>冲突</span>
+          <span>目标</span>
+          <span>钩子</span>
+        </div>
         {items.map(([label, value]) => (
           <section key={label} className="text-slab">
             <p>{label}</p>
@@ -405,16 +508,26 @@ function StoryDiagnosis() {
           </section>
         ))}
       </div>
-      <div className="risk-board">
-        <h3>改编提醒</h3>
-        <ul>
-          {diagnosis.adaptation_risks.concat(diagnosis.visual_potential).map((item) => (
-            <li key={item}>
-              <ListChecks size={16} />
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
+      <div className="diagnosis-side">
+        <div className="risk-board">
+          <h3>改编风险</h3>
+          <ul>
+            {diagnosis.adaptation_risks.map((item) => (
+              <li key={item}>
+                <ListChecks size={16} />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="signal-board">
+          <h3>可拍线索</h3>
+          <ul>
+            {diagnosis.visual_potential.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );
@@ -495,10 +608,23 @@ function BriefSheet() {
           </div>
         ))}
       </div>
-      <div className="brief-columns">
-        <ListBlock title="保留" items={brief.preserve} />
-        <ListBlock title="转换" items={brief.transform} />
-        <ListBlock title="避免" items={brief.avoid} />
+      <div className="brief-editor">
+        <label>
+          <span>策略</span>
+          <textarea defaultValue={brief.strategy.join("\n")} aria-label="改编策略" />
+        </label>
+        <label>
+          <span>保留</span>
+          <textarea defaultValue={brief.preserve.join("\n")} aria-label="需要保留的内容" />
+        </label>
+        <label>
+          <span>转换</span>
+          <textarea defaultValue={brief.transform.join("\n")} aria-label="需要转换的内容" />
+        </label>
+        <label>
+          <span>避免</span>
+          <textarea defaultValue={brief.avoid.join("\n")} aria-label="需要避免的内容" />
+        </label>
       </div>
     </article>
   );
@@ -595,49 +721,74 @@ function DraftDesk({
 function CompareMode() {
   return (
     <div className="compare-mode">
-      <ListBlock title="场景变化" items={["第 02 场线索提前", "没有删除场景"]} />
-      <ListBlock title="人物变化" items={["林澈的行动动机更明确"]} />
-      <ListBlock title="策略变化" items={["开场从氛围铺垫改为危机前置"]} />
+      <div className="version-rail">
+        {sampleProject.versions.map((version, index) => (
+          <section key={version.id} className={index === sampleProject.versions.length - 1 ? "is-current" : ""}>
+            <p>{version.created_at}</p>
+            <h3>{version.label}</h3>
+            <span>{version.summary}</span>
+          </section>
+        ))}
+      </div>
+      <div className="diff-board">
+        <section>
+          <p>修改前</p>
+          <h3>{sampleProject.scene_revisions[0].before_summary}</h3>
+        </section>
+        <section>
+          <p>修改后</p>
+          <h3>{sampleProject.scene_revisions[0].after_summary}</h3>
+        </section>
+        <section className="diff-note">
+          <p>修改要求</p>
+          <h3>{sampleProject.scene_revisions[0].instruction}</h3>
+        </section>
+      </div>
     </div>
   );
 }
 
-function ListBlock({ title, items }: { title: string; items: string[] }) {
-  return (
-    <section className="list-block">
-      <h3>{title}</h3>
-      <ul>
-        {items.map((item) => (
-          <li key={item}>
-            <CheckCircle2 size={15} />
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
 function InspectorPanel({
+  activeStage,
   tab,
   onChangeTab,
   selectedDirection,
   selectedScene,
+  selectedChunk,
   yamlPreview,
   validationReport,
   onDownloadYaml
 }: {
+  activeStage: StageId;
   tab: InspectorTab;
   onChangeTab: (tab: InspectorTab) => void;
   selectedDirection: (typeof sampleProject.directions)[number];
   selectedScene: (typeof sampleProject.scenes)[number];
+  selectedChunk: (typeof sampleProject.source.chapters)[number]["chunks"][number];
   yamlPreview: string;
   validationReport: ReturnType<typeof validateScreenplayProject>;
   onDownloadYaml: () => void;
 }) {
+  const evidenceRefs =
+    activeStage === "source"
+      ? [selectedChunk.id]
+      : activeStage === "directions"
+        ? selectedDirection.source_refs
+        : activeStage === "brief"
+          ? sampleProject.adaptation_brief.source_refs
+          : activeStage === "compare"
+            ? sampleProject.scenes.flatMap((scene) => scene.source_refs)
+            : selectedScene.source_refs;
+  const objectSummary = getInspectorSummary(activeStage, selectedDirection, selectedScene, selectedChunk);
+
   return (
     <aside className="inspector-panel">
-      <PanelHeading eyebrow="对象 Inspector" title="当前选择" />
+      <PanelHeading eyebrow="依据与检查" title="选择详情" />
+      <div className="inspector-object">
+        <span>{objectSummary.eyebrow}</span>
+        <strong>{objectSummary.title}</strong>
+        <small>{objectSummary.subtitle}</small>
+      </div>
       <div className="inspector-tabs">
         {inspectorTabs.map((item) => {
           const Icon = item.icon;
@@ -657,9 +808,14 @@ function InspectorPanel({
       </div>
       <div className="inspector-body">
         {tab === "director" ? (
-          <DirectorView selectedDirection={selectedDirection} selectedScene={selectedScene} />
+          <DirectorView
+            activeStage={activeStage}
+            selectedDirection={selectedDirection}
+            selectedScene={selectedScene}
+            selectedChunk={selectedChunk}
+          />
         ) : null}
-        {tab === "evidence" ? <EvidenceView /> : null}
+        {tab === "evidence" ? <EvidenceView refs={evidenceRefs} /> : null}
         {tab === "yaml" ? <YamlView yaml={yamlPreview} onDownloadYaml={onDownloadYaml} /> : null}
         {tab === "validation" ? <ValidationView report={validationReport} /> : null}
         {tab === "timeline" ? <TimelineView /> : null}
@@ -669,41 +825,120 @@ function InspectorPanel({
   );
 }
 
+function getInspectorSummary(
+  activeStage: StageId,
+  selectedDirection: (typeof sampleProject.directions)[number],
+  selectedScene: (typeof sampleProject.scenes)[number],
+  selectedChunk: (typeof sampleProject.source.chapters)[number]["chunks"][number]
+) {
+  if (activeStage === "source") {
+    return {
+      eyebrow: "原文依据",
+      title: selectedChunk.id,
+      subtitle: selectedChunk.summary
+    };
+  }
+
+  if (activeStage === "diagnosis") {
+    return {
+      eyebrow: "故事诊断",
+      title: "核心冲突与风险",
+      subtitle: sampleProject.story_diagnosis.opening_hook
+    };
+  }
+
+  if (activeStage === "directions") {
+    return {
+      eyebrow: "改编路线",
+      title: selectedDirection.title,
+      subtitle: selectedDirection.recommendation_reason
+    };
+  }
+
+  if (activeStage === "brief") {
+    return {
+      eyebrow: "改编简报",
+      title: `${sampleProject.adaptation_brief.target_medium} · ${sampleProject.adaptation_brief.tone}`,
+      subtitle: "后续写作要遵守的创作边界"
+    };
+  }
+
+  if (activeStage === "compare") {
+    const latest = sampleProject.versions[sampleProject.versions.length - 1];
+    return {
+      eyebrow: "版本对比",
+      title: latest.label,
+      subtitle: latest.summary
+    };
+  }
+
+  return {
+    eyebrow: activeStage === "blueprint" ? "场景蓝图" : "剧本场景",
+    title: selectedScene.title,
+    subtitle: selectedScene.adaptation_decision.reason
+  };
+}
+
 function DirectorView({
+  activeStage,
   selectedDirection,
-  selectedScene
+  selectedScene,
+  selectedChunk
 }: {
+  activeStage: StageId;
   selectedDirection: (typeof sampleProject.directions)[number];
   selectedScene: (typeof sampleProject.scenes)[number];
+  selectedChunk: (typeof sampleProject.source.chapters)[number]["chunks"][number];
 }) {
+  const action = stageActions[activeStage];
+
   return (
     <div className="inspector-stack">
+      <section className="detail-block">
+        <p>当前工作模式</p>
+        <h3>{modeTitles[activeStage].title}</h3>
+        <span>{action.detail}</span>
+      </section>
+      {activeStage === "source" ? (
+        <section className="detail-block">
+          <p>选中依据</p>
+          <h3>{selectedChunk.summary}</h3>
+          <span>{selectedChunk.text}</span>
+        </section>
+      ) : null}
       <section className="detail-block">
         <p>当前方向</p>
         <h3>{selectedDirection.title}</h3>
         <span>{selectedDirection.recommendation_reason}</span>
       </section>
-      <section className="detail-block">
-        <p>当前场景</p>
-        <h3>{selectedScene.title}</h3>
-        <span>{selectedScene.adaptation_decision.reason}</span>
+      {activeStage === "blueprint" || activeStage === "screenplay" || activeStage === "compare" ? (
+        <section className="detail-block">
+          <p>当前场景</p>
+          <h3>{selectedScene.title}</h3>
+          <span>{selectedScene.adaptation_decision.reason}</span>
+        </section>
+      ) : null}
+      <section className="next-step-card">
+        <p>下一步</p>
+        <h3>{action.label}</h3>
+        <span>{action.detail}</span>
       </section>
-      <button className="pending-button full-width" disabled>
-        <MessageSquareText size={16} />
-        场景修订待接入
-      </button>
     </div>
   );
 }
 
-function EvidenceView() {
+function EvidenceView({ refs }: { refs: string[] }) {
   const chunks = sampleProject.source.chapters.flatMap((chapter) => chapter.chunks);
+  const selectedRefs = new Set(refs);
+  const visibleChunks = chunks.filter((chunk) => selectedRefs.has(chunk.id));
+  const fallbackChunks = visibleChunks.length ? visibleChunks : chunks;
 
   return (
     <div className="inspector-stack">
-      {chunks.map((chunk) => (
+      {fallbackChunks.map((chunk) => (
         <section key={chunk.id} className="evidence-item">
           <p>{chunk.id}</p>
+          <h3>{chunk.summary}</h3>
           <span>{chunk.text}</span>
         </section>
       ))}
@@ -801,7 +1036,7 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
             icon={FileCheck2}
             title="输出"
             rows={[
-              ["Schema", "1.0"],
+              ["结构版本", "1.0"],
               ["原文摘录", "导出时包含"],
               ["校验报告", "导出时包含"]
             ]}
@@ -810,9 +1045,9 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
             icon={ShieldCheck}
             title="模型"
             rows={[
-              ["Provider", "OpenAI compatible"],
-              ["API Key", "仅从环境变量读取"],
-              ["失败处理", "JSON 修复后再校验"]
+              ["模型服务", "兼容接口"],
+              ["密钥", "仅从环境变量读取"],
+              ["失败处理", "结构修复后再校验"]
             ]}
           />
           <SettingsGroup
@@ -821,7 +1056,7 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
             rows={[
               ["自动保存", "开启"],
               ["存储位置", "本地浏览器"],
-              ["项目备份", "导出 JSON"]
+              ["项目备份", "导出项目文件"]
             ]}
           />
           <SettingsGroup
@@ -839,7 +1074,7 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
             关闭
           </button>
           <button className="pending-button" disabled>
-            保存待接入
+            保存设置（待接入）
           </button>
         </div>
       </section>
