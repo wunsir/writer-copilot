@@ -453,7 +453,8 @@ button:disabled {
 .focus-options,
 .mini-metrics,
 .pill-row,
-.source-row {
+.source-row,
+.knowledge-pack-list {
   display: flex;
   flex-wrap: wrap;
   gap: 0.38rem;
@@ -463,6 +464,7 @@ button:disabled {
 .mini-metrics span,
 .pill-row span,
 .source-row span,
+.knowledge-pack-list span,
 .decision-tag {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -501,6 +503,8 @@ button:disabled {
   gap: 0.65rem;
 }
 
+.source-import-card,
+.source-search-card,
 .chapter-card,
 .reader-copy,
 .text-slab,
@@ -526,6 +530,8 @@ button:disabled {
   border-radius: 0.48rem;
 }
 
+.source-import-card,
+.source-search-card,
 .chapter-card,
 .reader-copy,
 .text-slab,
@@ -553,6 +559,11 @@ button:disabled {
   border-color: var(--border);
 }
 
+.board-action {
+  justify-content: center;
+  margin-top: 1rem;
+}
+
 .board-notes h3,
 .brief-sheet h3 {
   color: var(--fg);
@@ -565,8 +576,27 @@ button:disabled {
 
 .mini-metrics,
 .pill-row,
-.source-row {
+.source-row,
+.knowledge-pack-list {
   margin-top: 0.75rem;
+}
+
+.knowledge-pack-list.compact {
+  margin-top: 0.62rem;
+}
+
+.knowledge-pack-list.compact span {
+  background: var(--surface-muted);
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+}
+
+.trace-error {
+  color: var(--danger);
+  display: block;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  margin-top: 0.62rem;
 }
 
 .direction-card,
@@ -697,6 +727,110 @@ button:disabled {
 .brief-editor textarea:focus {
   border-color: var(--accent-ring);
   outline: 2px solid color-mix(in oklch, var(--accent) 12%, transparent);
+}
+
+.source-import-card,
+.source-search-card,
+.source-import-mini,
+.import-actions,
+.search-results {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.source-import-card h3,
+.source-search-card h3 {
+  font-size: 0.98rem;
+  font-weight: 760;
+  margin: 0.25rem 0 0;
+}
+
+.source-import-card textarea,
+.source-import-mini textarea,
+.source-search-card input {
+  background: color-mix(in oklch, var(--surface) 80%, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 0.42rem;
+  color: var(--fg);
+  font: inherit;
+  outline: none;
+  padding: 0.72rem;
+  width: 100%;
+}
+
+.source-import-card textarea,
+.source-import-mini textarea {
+  line-height: 1.75;
+  min-height: 132px;
+  resize: vertical;
+}
+
+.source-import-mini textarea {
+  min-height: 118px;
+}
+
+.source-import-card textarea:focus,
+.source-import-mini textarea:focus,
+.source-search-card input:focus {
+  border-color: var(--accent-ring);
+  outline: 2px solid color-mix(in oklch, var(--accent) 12%, transparent);
+}
+
+.import-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.file-button {
+  cursor: pointer;
+  justify-content: center;
+  position: relative;
+}
+
+.file-button input {
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  width: 1px;
+}
+
+.form-error,
+.empty-note {
+  color: var(--danger);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.empty-note {
+  color: var(--muted);
+}
+
+.search-results button {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.42rem;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.65rem 0.72rem;
+  text-align: left;
+}
+
+.search-results button:hover {
+  border-color: var(--border-strong);
+}
+
+.search-results span,
+.search-results small {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.search-results strong {
+  color: var(--fg-soft);
+  font-size: 0.84rem;
+  line-height: 1.45;
 }
 
 .chapter-card h3,

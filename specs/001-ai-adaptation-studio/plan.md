@@ -6,9 +6,26 @@ Build the full AI Adaptation Studio vision through compact product slices. Do no
 
 Each slice should deliver a visible product step and a small set of verification checks. Detailed tasks are checklists inside a slice, not separate process ceremonies.
 
+## Current Delivery State
+
+Slices 1, 2, and the first source-import slice are implemented as the current product baseline:
+
+- Next.js app scaffold, TypeScript, lint, test, and build commands exist.
+- Domain schemas, sample project data, YAML export, and validation utilities exist.
+- The first screen is the Studio, not a landing page.
+- Stage 1 visual shell, Stage 2 interaction modes, and Microcopy + Action Semantics pass are complete enough for handoff.
+- Pasted-text and `.txt` import, chapter parsing, source chunks, and lightweight source search are connected.
+- Knowledge pack files, metadata, selection, Inspector display, local JSON harness preview, and trace recording are connected.
+- DashScope/OpenAI-compatible provider config, direction generation route, and UI entry are connected. Live calls require ignored local env configuration.
+- API-backed story diagnosis, brief, blueprint, screenplay generation, `.docx` import, settings save, durable persistence, and source-ref jumping are not connected yet.
+
+Do not spend the next slice on broad UI restructuring, color, font, or shadow polish. The next implementation slice should continue API-backed JSON generation for diagnosis, brief, blueprint, and screenplay.
+
 ## Slice 1: Scaffold And Studio Shell
 
 Goal: Start the app and immediately establish the real Studio shape.
+
+Status: Implemented for the current mock baseline.
 
 Scope:
 
@@ -34,6 +51,8 @@ Verification:
 ## Slice 2: Domain Core And Mock Full Flow
 
 Goal: Make the complete product flow visible with sample data before connecting real import or AI.
+
+Status: Implemented for the current mock baseline.
 
 Scope:
 
@@ -70,6 +89,8 @@ Verification:
 
 Goal: Replace static source data with real imported source handling and source-grounded evidence.
 
+Status: Implemented for pasted text and `.txt` import. `.docx` remains future work pending dependency approval.
+
 Scope:
 
 - Paste text import.
@@ -93,6 +114,8 @@ Verification:
 
 Goal: Replace mock generation with a real JSON-first adaptation runtime.
 
+Status: Partially implemented. Knowledge packs, local JSON validation, repair path, trace recording, compatible provider config, direction generation route, and UI entry are implemented. Downstream diagnosis, brief, blueprint, and screenplay generation remain future work.
+
 Scope:
 
 - Add internal knowledge packs.
@@ -113,8 +136,10 @@ Scope:
 
 Verification:
 
-- Harness can run from imported source to diagnosis.
-- Harness can generate dynamic directions using source refs and knowledge packs.
+- Knowledge packs can be selected from target medium, strategy, and tone. Completed for local selection.
+- Harness can record local JSON-first preview runs with source refs and knowledge packs. Completed without API calls.
+- Harness can run from imported source to diagnosis. Not started.
+- Harness can generate dynamic directions using source refs and knowledge packs. Completed for API-backed direction generation with a compact 2-direction interactive call.
 - User can choose or adjust a direction and build an Adaptation Brief.
 - Harness can generate Scene Blueprint and screenplay JSON.
 - Invalid AI output is rejected or repaired.

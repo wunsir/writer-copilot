@@ -28,10 +28,21 @@ import {
   X,
   type LucideIcon
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ChangeEvent } from "react";
+import {
+  AdaptationDirectionSchema,
+  type HarnessRun,
+  type ScreenplayProject,
+  type SourceChunk
+} from "@/lib/domain/schemas";
 import { validateScreenplayProject } from "@/lib/domain/validators";
 import { screenplayToYaml } from "@/lib/domain/yaml";
+import { runJsonHarnessStep } from "@/lib/harness/json-runner";
+import { selectKnowledgePacks, type SelectedKnowledgePack } from "@/lib/knowledge/knowledge-packs";
 import { sampleProject } from "@/lib/sample/project";
+import { parseNovelSource } from "@/lib/source/chapter-parser";
+import { createProjectFromImportedSource } from "@/lib/source/imported-project";
+import { buildSourceIndex, searchSourceChunks, type SourceSearchResult } from "@/lib/source/source-index";
 
 type StageId =
   | "source"
@@ -129,25 +140,41 @@ const stageActions: Record<StageId, { label: string; detail: string; tab: Inspec
 };
 
 export default function Home() {
+  const [project, setProject] = useState<ScreenplayProject>(sampleProject);
   const [activeStage, setActiveStage] = useState<StageId>("directions");
   const [expandedStage, setExpandedStage] = useState<StageId | null>("directions");
-  const [selectedDirectionId, setSelectedDirectionId] = useState(sampleProject.directions[0].id);
-  const [selectedSceneId, setSelectedSceneId] = useState(sampleProject.scenes[0].id);
-  const [selectedChunkId, setSelectedChunkId] = useState(sampleProject.source.chapters[0].chunks[0].id);
+  const [selectedDirectionId, setSelectedDirectionId] = useState(project.directions[0].id);
+  const [selectedSceneId, setSelectedSceneId] = useState(project.scenes[0].id);
+  const [selectedChunkId, setSelectedChunkId] = useState(project.source.chapters[0].chunks[0].id);
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("director");
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const validationReport = useMemo(() => validateScreenplayProject(sampleProject), []);
-  const yamlPreview = useMemo(() => screenplayToYaml(sampleProject, validationReport), [validationReport]);
+  const [sourceDraft, setSourceDraft] = useState("");
+  const [sourceParseError, setSourceParseError] = useState<string | null>(null);
+  const [sourceSearchQuery, setSourceSearchQuery] = useState("事故");
+  const [isGeneratingDirections, setIsGeneratingDirections] = useState(false);
+  const validationReport = useMemo(() => validateScreenplayProject(project), [project]);
+  const yamlPreview = useMemo(() => screenplayToYaml(project, validationReport), [project, validationReport]);
   const sourceChunks = useMemo(
-    () => sampleProject.source.chapters.flatMap((chapter) => chapter.chunks),
-    []
+    () => project.source.chapters.flatMap((chapter) => chapter.chunks),
+    [project]
+  );
+  const sourceSearchResults = useMemo(
+    () => searchSourceChunks(buildSourceIndex(sourceChunks), sourceSearchQuery, { limit: 6 }),
+    [sourceChunks, sourceSearchQuery]
   );
   const selectedDirection =
-    sampleProject.directions.find((direction) => direction.id === selectedDirectionId) ??
-    sampleProject.directions[0];
-  const selectedScene =
-    sampleProject.scenes.find((scene) => scene.id === selectedSceneId) ?? sampleProject.scenes[0];
+    project.directions.find((direction) => direction.id === selectedDirectionId) ?? project.directions[0];
+  const selectedScene = project.scenes.find((scene) => scene.id === selectedSceneId) ?? project.scenes[0];
   const selectedChunk = sourceChunks.find((chunk) => chunk.id === selectedChunkId) ?? sourceChunks[0];
+  const selectedKnowledgePacks = useMemo(
+    () =>
+      selectKnowledgePacks({
+        targetMedium: project.adaptation_brief.target_medium,
+        strategies: project.adaptation_brief.strategy,
+        tone: project.adaptation_brief.tone
+      }),
+    [project.adaptation_brief]
+  );
   const activeStageMeta = stages.find((stage) => stage.id === activeStage) ?? stages[0];
   const activeAction = stageActions[activeStage];
 
@@ -173,6 +200,99 @@ export default function Home() {
     anchor.download = "writer-copilot-sample.yaml";
     anchor.click();
     URL.revokeObjectURL(url);
+  }
+
+  function importSourceText(text: string) {
+    const parsed = parseNovelSource(text);
+
+    if (!parsed.ok) {
+      setSourceParseError(parsed.error.message);
+      return;
+    }
+
+    const importedProject = createProjectFromImportedSource(sampleProject, parsed.source);
+    const firstChunk = importedProject.source.chapters[0]?.chunks[0];
+
+    setProject(importedProject);
+    setSourceParseError(null);
+    setSourceDraft(text);
+    setSelectedDirectionId(importedProject.directions[0].id);
+    setSelectedSceneId(importedProject.scenes[0].id);
+    setSelectedChunkId(firstChunk?.id ?? importedProject.scenes[0].source_refs[0]);
+    setActiveStage("source");
+    setExpandedStage("source");
+    setInspectorTab("evidence");
+  }
+
+  async function importSourceFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const text = await file.text();
+    importSourceText(text);
+    event.target.value = "";
+  }
+
+  async function runLocalHarnessPreview() {
+    const result = await runJsonHarnessStep({
+      id: `run_preview_${Date.now()}`,
+      step: "generate_directions_preview",
+      model: "local-json-preview",
+      sourceChunksUsed: selectedDirection.source_refs,
+      knowledgePacksUsed: selectedKnowledgePacks.map((item) => item.pack.id),
+      schema: AdaptationDirectionSchema,
+      execute: async () => JSON.stringify(selectedDirection)
+    });
+
+    setProject((currentProject) => ({
+      ...currentProject,
+      harness_trace: [result.run, ...currentProject.harness_trace]
+    }));
+    setInspectorTab("trace");
+  }
+
+  async function generateDirectionsFromApi() {
+    setIsGeneratingDirections(true);
+
+    try {
+      const response = await fetch("/api/adaptation/generate-directions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ project })
+      });
+      const payload = (await response.json()) as {
+        directions?: ScreenplayProject["directions"];
+        run?: HarnessRun;
+        error?: string;
+      };
+
+      if (!response.ok || !payload.directions || !payload.run) {
+        setProject((currentProject) => ({
+          ...currentProject,
+          harness_trace: [
+            payload.run ?? createClientFailedRun("generate_directions", payload.error ?? "方向生成失败。"),
+            ...currentProject.harness_trace
+          ]
+        }));
+        setInspectorTab("trace");
+        return;
+      }
+
+      setProject((currentProject) => ({
+        ...currentProject,
+        directions: payload.directions ?? currentProject.directions,
+        harness_trace: [payload.run as HarnessRun, ...currentProject.harness_trace]
+      }));
+      setSelectedDirectionId(payload.directions[0].id);
+      setInspectorTab("director");
+    } finally {
+      setIsGeneratingDirections(false);
+    }
   }
 
   return (
@@ -222,32 +342,52 @@ export default function Home() {
 
         <section className={`studio-grid ${expandedStage ? "is-expanded" : ""}`}>
           <ProjectBinder
+            project={project}
             activeStage={activeStage}
             expandedStage={expandedStage}
             onActivateStage={activateStage}
             onToggleExpanded={(stage) => setExpandedStage(expandedStage === stage ? null : stage)}
+            sourceDraft={sourceDraft}
+            sourceParseError={sourceParseError}
+            onSourceDraftChange={setSourceDraft}
+            onImportSource={() => importSourceText(sourceDraft)}
+            onImportSourceFile={importSourceFile}
           />
           <AdaptationCanvas
+            project={project}
             activeStage={activeStage}
             selectedDirectionId={selectedDirectionId}
             selectedSceneId={selectedSceneId}
             selectedChunkId={selectedChunkId}
+            sourceDraft={sourceDraft}
+            sourceParseError={sourceParseError}
+            sourceSearchQuery={sourceSearchQuery}
+            sourceSearchResults={sourceSearchResults}
+            isGeneratingDirections={isGeneratingDirections}
             onSelectDirection={setSelectedDirectionId}
             onSelectScene={setSelectedSceneId}
             onSelectChunk={setSelectedChunkId}
             onOpenInspector={setInspectorTab}
             onDownloadYaml={downloadYaml}
+            onSourceDraftChange={setSourceDraft}
+            onImportSource={() => importSourceText(sourceDraft)}
+            onImportSourceFile={importSourceFile}
+            onSourceSearchQueryChange={setSourceSearchQuery}
+            onGenerateDirections={generateDirectionsFromApi}
           />
           <InspectorPanel
+            project={project}
             activeStage={activeStage}
             tab={inspectorTab}
             onChangeTab={setInspectorTab}
             selectedDirection={selectedDirection}
             selectedScene={selectedScene}
             selectedChunk={selectedChunk}
+            selectedKnowledgePacks={selectedKnowledgePacks}
             yamlPreview={yamlPreview}
             validationReport={validationReport}
             onDownloadYaml={downloadYaml}
+            onRunLocalHarnessPreview={runLocalHarnessPreview}
           />
         </section>
       </div>
@@ -257,15 +397,27 @@ export default function Home() {
 }
 
 function ProjectBinder({
+  project,
   activeStage,
   expandedStage,
   onActivateStage,
-  onToggleExpanded
+  onToggleExpanded,
+  sourceDraft,
+  sourceParseError,
+  onSourceDraftChange,
+  onImportSource,
+  onImportSourceFile
 }: {
+  project: ScreenplayProject;
   activeStage: StageId;
   expandedStage: StageId | null;
   onActivateStage: (stage: StageId) => void;
   onToggleExpanded: (stage: StageId) => void;
+  sourceDraft: string;
+  sourceParseError: string | null;
+  onSourceDraftChange: (value: string) => void;
+  onImportSource: () => void;
+  onImportSourceFile: (event: ChangeEvent<HTMLInputElement>) => void;
 }) {
   return (
     <aside className="binder-panel">
@@ -298,7 +450,17 @@ function ProjectBinder({
                   {isExpanded ? <PanelLeftOpen size={15} /> : <ChevronRight size={15} />}
                 </button>
               </div>
-              {isExpanded ? <BinderFocus stage={stage.id} /> : null}
+              {isExpanded ? (
+                <BinderFocus
+                  project={project}
+                  stage={stage.id}
+                  sourceDraft={sourceDraft}
+                  sourceParseError={sourceParseError}
+                  onSourceDraftChange={onSourceDraftChange}
+                  onImportSource={onImportSource}
+                  onImportSourceFile={onImportSourceFile}
+                />
+              ) : null}
             </div>
           );
         })}
@@ -307,26 +469,58 @@ function ProjectBinder({
   );
 }
 
-function BinderFocus({ stage }: { stage: StageId }) {
+function BinderFocus({
+  project,
+  stage,
+  sourceDraft,
+  sourceParseError,
+  onSourceDraftChange,
+  onImportSource,
+  onImportSourceFile
+}: {
+  project: ScreenplayProject;
+  stage: StageId;
+  sourceDraft: string;
+  sourceParseError: string | null;
+  onSourceDraftChange: (value: string) => void;
+  onImportSource: () => void;
+  onImportSourceFile: (event: ChangeEvent<HTMLInputElement>) => void;
+}) {
   return (
     <div className="binder-focus">
       <p>{binderCopy[stage]}</p>
       {stage === "source" ? (
-        <button className="pending-button full-width" disabled>
-          <Upload size={16} />
-          导入原文（待接入）
-        </button>
+        <div className="source-import-mini">
+          <textarea
+            aria-label="粘贴小说原文"
+            placeholder="粘贴至少 3 章小说原文..."
+            value={sourceDraft}
+            onChange={(event) => onSourceDraftChange(event.target.value)}
+          />
+          {sourceParseError ? <span className="form-error">{sourceParseError}</span> : null}
+          <div className="import-actions">
+            <button className="primary-button full-width" onClick={onImportSource} disabled={!sourceDraft.trim()}>
+              <Upload size={16} />
+              导入原文
+            </button>
+            <label className="quiet-button full-width file-button">
+              <Type size={16} />
+              上传 .txt
+              <input type="file" accept=".txt,text/plain" onChange={onImportSourceFile} />
+            </label>
+          </div>
+        </div>
       ) : null}
       {stage === "directions" ? (
         <div className="focus-options">
-          {sampleProject.directions.map((direction) => (
+          {project.directions.map((direction) => (
             <span key={direction.id}>{direction.title}</span>
           ))}
         </div>
       ) : null}
       {stage === "blueprint" ? (
         <div className="focus-options">
-          {sampleProject.scene_blueprint.map((scene) => (
+          {project.scene_blueprint.map((scene) => (
             <span key={scene.id}>{scene.title}</span>
           ))}
         </div>
@@ -336,25 +530,47 @@ function BinderFocus({ stage }: { stage: StageId }) {
 }
 
 function AdaptationCanvas({
+  project,
   activeStage,
   selectedDirectionId,
   selectedSceneId,
   selectedChunkId,
+  sourceDraft,
+  sourceParseError,
+  sourceSearchQuery,
+  sourceSearchResults,
+  isGeneratingDirections,
   onSelectDirection,
   onSelectScene,
   onSelectChunk,
   onOpenInspector,
-  onDownloadYaml
+  onDownloadYaml,
+  onSourceDraftChange,
+  onImportSource,
+  onImportSourceFile,
+  onSourceSearchQueryChange,
+  onGenerateDirections
 }: {
+  project: ScreenplayProject;
   activeStage: StageId;
   selectedDirectionId: string;
   selectedSceneId: string;
   selectedChunkId: string;
+  sourceDraft: string;
+  sourceParseError: string | null;
+  sourceSearchQuery: string;
+  sourceSearchResults: SourceSearchResult[];
+  isGeneratingDirections: boolean;
   onSelectDirection: (id: string) => void;
   onSelectScene: (id: string) => void;
   onSelectChunk: (id: string) => void;
   onOpenInspector: (tab: InspectorTab) => void;
   onDownloadYaml: () => void;
+  onSourceDraftChange: (value: string) => void;
+  onImportSource: () => void;
+  onImportSourceFile: (event: ChangeEvent<HTMLInputElement>) => void;
+  onSourceSearchQueryChange: (value: string) => void;
+  onGenerateDirections: () => void;
 }) {
   const mode = modeTitles[activeStage];
   const action = stageActions[activeStage];
@@ -389,22 +605,35 @@ function AdaptationCanvas({
 
       {activeStage === "source" ? (
         <SourceWorkspace
+          project={project}
           selectedChunkId={selectedChunkId}
+          sourceDraft={sourceDraft}
+          sourceParseError={sourceParseError}
+          sourceSearchQuery={sourceSearchQuery}
+          sourceSearchResults={sourceSearchResults}
           onSelectChunk={onSelectChunk}
           onOpenInspector={onOpenInspector}
+          onSourceDraftChange={onSourceDraftChange}
+          onImportSource={onImportSource}
+          onImportSourceFile={onImportSourceFile}
+          onSourceSearchQueryChange={onSourceSearchQueryChange}
         />
       ) : null}
-      {activeStage === "diagnosis" ? <StoryDiagnosis /> : null}
+      {activeStage === "diagnosis" ? <StoryDiagnosis project={project} /> : null}
       {activeStage === "directions" ? (
         <DirectionBoard
+          project={project}
           selectedDirectionId={selectedDirectionId}
           onSelectDirection={onSelectDirection}
           onOpenInspector={onOpenInspector}
+          isGeneratingDirections={isGeneratingDirections}
+          onGenerateDirections={onGenerateDirections}
         />
       ) : null}
-      {activeStage === "brief" ? <BriefSheet /> : null}
+      {activeStage === "brief" ? <BriefSheet project={project} /> : null}
       {activeStage === "blueprint" ? (
         <BlueprintBoard
+          project={project}
           selectedSceneId={selectedSceneId}
           onSelectScene={onSelectScene}
           onOpenInspector={onOpenInspector}
@@ -412,12 +641,13 @@ function AdaptationCanvas({
       ) : null}
       {activeStage === "screenplay" ? (
         <DraftDesk
+          project={project}
           selectedSceneId={selectedSceneId}
           onSelectScene={onSelectScene}
           onOpenInspector={onOpenInspector}
         />
       ) : null}
-      {activeStage === "compare" ? <CompareMode /> : null}
+      {activeStage === "compare" ? <CompareMode project={project} /> : null}
     </section>
   );
 }
@@ -432,21 +662,94 @@ function PanelHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
 }
 
 function SourceWorkspace({
+  project,
   selectedChunkId,
+  sourceDraft,
+  sourceParseError,
+  sourceSearchQuery,
+  sourceSearchResults,
   onSelectChunk,
-  onOpenInspector
+  onOpenInspector,
+  onSourceDraftChange,
+  onImportSource,
+  onImportSourceFile,
+  onSourceSearchQueryChange
 }: {
+  project: ScreenplayProject;
   selectedChunkId: string;
+  sourceDraft: string;
+  sourceParseError: string | null;
+  sourceSearchQuery: string;
+  sourceSearchResults: SourceSearchResult[];
   onSelectChunk: (id: string) => void;
   onOpenInspector: (tab: InspectorTab) => void;
+  onSourceDraftChange: (value: string) => void;
+  onImportSource: () => void;
+  onImportSourceFile: (event: ChangeEvent<HTMLInputElement>) => void;
+  onSourceSearchQueryChange: (value: string) => void;
 }) {
-  const chunks = sampleProject.source.chapters.flatMap((chapter) => chapter.chunks);
+  const chunks = project.source.chapters.flatMap((chapter) => chapter.chunks);
   const selectedChunk = chunks.find((chunk) => chunk.id === selectedChunkId) ?? chunks[0];
 
   return (
     <div className="source-workspace">
+      <section className="source-import-card">
+        <div>
+          <p className="eyebrow">真实导入</p>
+          <h3>把小说原文接入当前工作台。</h3>
+        </div>
+        <textarea
+          aria-label="粘贴至少 3 章小说原文"
+          placeholder="粘贴至少 3 章小说原文，支持 第一章 / 第1章 / Chapter 1 / ### 标题..."
+          value={sourceDraft}
+          onChange={(event) => onSourceDraftChange(event.target.value)}
+        />
+        {sourceParseError ? <span className="form-error">{sourceParseError}</span> : null}
+        <div className="import-actions">
+          <button className="primary-button" onClick={onImportSource} disabled={!sourceDraft.trim()}>
+            <Upload size={16} />
+            导入原文
+          </button>
+          <label className="quiet-button file-button">
+            <Type size={16} />
+            上传 .txt
+            <input type="file" accept=".txt,text/plain" onChange={onImportSourceFile} />
+          </label>
+        </div>
+      </section>
+      <section className="source-search-card">
+        <div>
+          <p className="eyebrow">轻量检索</p>
+          <h3>按关键词找原文依据。</h3>
+        </div>
+        <input
+          aria-label="检索原文依据"
+          value={sourceSearchQuery}
+          onChange={(event) => onSourceSearchQueryChange(event.target.value)}
+          placeholder="输入人物、地点、事件或道具..."
+        />
+        <div className="search-results">
+          {sourceSearchResults.length ? (
+            sourceSearchResults.map((result) => (
+              <button
+                key={result.chunk.id}
+                onClick={() => {
+                  onSelectChunk(result.chunk.id);
+                  onOpenInspector("evidence");
+                }}
+              >
+                <span>{result.chunk.id}</span>
+                <strong>{result.chunk.summary}</strong>
+                <small>{result.matched_terms.join(" / ")} · score {result.score}</small>
+              </button>
+            ))
+          ) : (
+            <span className="empty-note">输入关键词后显示匹配的原文依据。</span>
+          )}
+        </div>
+      </section>
       <div className="chapter-strip">
-        {sampleProject.source.chapters.map((chapter) => (
+        {project.source.chapters.map((chapter) => (
           <article key={chapter.id} className="chapter-card">
             <p className="source-id">{chapter.id}</p>
             <h3>{chapter.title}</h3>
@@ -485,8 +788,8 @@ function SourceWorkspace({
   );
 }
 
-function StoryDiagnosis() {
-  const diagnosis = sampleProject.story_diagnosis;
+function StoryDiagnosis({ project }: { project: ScreenplayProject }) {
+  const diagnosis = project.story_diagnosis;
   const items = [
     ["核心冲突", diagnosis.core_conflict],
     ["主角目标", diagnosis.protagonist_goal],
@@ -534,13 +837,19 @@ function StoryDiagnosis() {
 }
 
 function DirectionBoard({
+  project,
   selectedDirectionId,
   onSelectDirection,
-  onOpenInspector
+  onOpenInspector,
+  isGeneratingDirections,
+  onGenerateDirections
 }: {
+  project: ScreenplayProject;
   selectedDirectionId: string;
   onSelectDirection: (id: string) => void;
   onOpenInspector: (tab: InspectorTab) => void;
+  isGeneratingDirections: boolean;
+  onGenerateDirections: () => void;
 }) {
   return (
     <div className="direction-board">
@@ -548,13 +857,17 @@ function DirectionBoard({
         <p className="eyebrow">方向板</p>
         <h3>这一层决定剧本会像什么。</h3>
         <div className="mini-metrics">
-          <span>2 个方向</span>
-          <span>6 段依据</span>
-          <span>短剧优先</span>
+          <span>{project.directions.length} 个方向</span>
+          <span>{project.source.chapters.flatMap((chapter) => chapter.chunks).length} 段依据</span>
+          <span>{project.adaptation_brief.target_medium}优先</span>
         </div>
+        <button className="primary-button full-width board-action" onClick={onGenerateDirections} disabled={isGeneratingDirections}>
+          <Sparkles size={16} />
+          {isGeneratingDirections ? "生成中..." : "AI 生成方向"}
+        </button>
       </section>
       <div className="direction-lanes">
-        {sampleProject.directions.map((direction) => {
+          {project.directions.map((direction) => {
           const selected = direction.id === selectedDirectionId;
 
           return (
@@ -585,8 +898,24 @@ function DirectionBoard({
   );
 }
 
-function BriefSheet() {
-  const brief = sampleProject.adaptation_brief;
+function createClientFailedRun(step: string, error: string): HarnessRun {
+  const now = new Date().toISOString();
+
+  return {
+    id: `run_client_failed_${Date.now()}`,
+    step,
+    status: "failed",
+    started_at: now,
+    ended_at: now,
+    source_chunks_used: [],
+    knowledge_packs_used: [],
+    repair_attempts: 0,
+    error
+  };
+}
+
+function BriefSheet({ project }: { project: ScreenplayProject }) {
+  const brief = project.adaptation_brief;
   const rows = [
     ["媒介", brief.target_medium],
     ["节奏", brief.pacing],
@@ -631,17 +960,19 @@ function BriefSheet() {
 }
 
 function BlueprintBoard({
+  project,
   selectedSceneId,
   onSelectScene,
   onOpenInspector
 }: {
+  project: ScreenplayProject;
   selectedSceneId: string;
   onSelectScene: (id: string) => void;
   onOpenInspector: (tab: InspectorTab) => void;
 }) {
   return (
     <div className="beat-board">
-      {sampleProject.scene_blueprint.map((blueprint) => {
+      {project.scene_blueprint.map((blueprint) => {
         const selected = selectedSceneId.replace("scene", "blueprint") === blueprint.id;
 
         return (
@@ -673,10 +1004,12 @@ function BlueprintBoard({
 }
 
 function DraftDesk({
+  project,
   selectedSceneId,
   onSelectScene,
   onOpenInspector
 }: {
+  project: ScreenplayProject;
   selectedSceneId: string;
   onSelectScene: (id: string) => void;
   onOpenInspector: (tab: InspectorTab) => void;
@@ -684,7 +1017,7 @@ function DraftDesk({
   return (
     <div className="draft-desk">
       <div className="scene-index">
-        {sampleProject.scenes.map((scene) => (
+        {project.scenes.map((scene) => (
           <button
             key={scene.id}
             className={selectedSceneId === scene.id ? "is-selected" : ""}
@@ -698,7 +1031,7 @@ function DraftDesk({
         ))}
       </div>
       <div className="script-page">
-        {sampleProject.scenes.map((scene) => (
+        {project.scenes.map((scene) => (
           <section key={scene.id} className={selectedSceneId === scene.id ? "is-current" : ""}>
             <p>{scene.id}</p>
             <h3>{scene.title}</h3>
@@ -718,12 +1051,12 @@ function DraftDesk({
   );
 }
 
-function CompareMode() {
+function CompareMode({ project }: { project: ScreenplayProject }) {
   return (
     <div className="compare-mode">
       <div className="version-rail">
-        {sampleProject.versions.map((version, index) => (
-          <section key={version.id} className={index === sampleProject.versions.length - 1 ? "is-current" : ""}>
+        {project.versions.map((version, index) => (
+          <section key={version.id} className={index === project.versions.length - 1 ? "is-current" : ""}>
             <p>{version.created_at}</p>
             <h3>{version.label}</h3>
             <span>{version.summary}</span>
@@ -733,15 +1066,15 @@ function CompareMode() {
       <div className="diff-board">
         <section>
           <p>修改前</p>
-          <h3>{sampleProject.scene_revisions[0].before_summary}</h3>
+          <h3>{project.scene_revisions[0]?.before_summary ?? "暂无修改记录"}</h3>
         </section>
         <section>
           <p>修改后</p>
-          <h3>{sampleProject.scene_revisions[0].after_summary}</h3>
+          <h3>{project.scene_revisions[0]?.after_summary ?? "导入后将记录场景级变化"}</h3>
         </section>
         <section className="diff-note">
           <p>修改要求</p>
-          <h3>{sampleProject.scene_revisions[0].instruction}</h3>
+          <h3>{project.scene_revisions[0]?.instruction ?? "等待局部修订接入"}</h3>
         </section>
       </div>
     </div>
@@ -749,37 +1082,43 @@ function CompareMode() {
 }
 
 function InspectorPanel({
+  project,
   activeStage,
   tab,
   onChangeTab,
   selectedDirection,
   selectedScene,
   selectedChunk,
+  selectedKnowledgePacks,
   yamlPreview,
   validationReport,
-  onDownloadYaml
+  onDownloadYaml,
+  onRunLocalHarnessPreview
 }: {
+  project: ScreenplayProject;
   activeStage: StageId;
   tab: InspectorTab;
   onChangeTab: (tab: InspectorTab) => void;
-  selectedDirection: (typeof sampleProject.directions)[number];
-  selectedScene: (typeof sampleProject.scenes)[number];
-  selectedChunk: (typeof sampleProject.source.chapters)[number]["chunks"][number];
+  selectedDirection: ScreenplayProject["directions"][number];
+  selectedScene: ScreenplayProject["scenes"][number];
+  selectedChunk: SourceChunk;
+  selectedKnowledgePacks: SelectedKnowledgePack[];
   yamlPreview: string;
   validationReport: ReturnType<typeof validateScreenplayProject>;
   onDownloadYaml: () => void;
+  onRunLocalHarnessPreview: () => void;
 }) {
   const evidenceRefs =
     activeStage === "source"
       ? [selectedChunk.id]
       : activeStage === "directions"
         ? selectedDirection.source_refs
-        : activeStage === "brief"
-          ? sampleProject.adaptation_brief.source_refs
+          : activeStage === "brief"
+          ? project.adaptation_brief.source_refs
           : activeStage === "compare"
-            ? sampleProject.scenes.flatMap((scene) => scene.source_refs)
+            ? project.scenes.flatMap((scene) => scene.source_refs)
             : selectedScene.source_refs;
-  const objectSummary = getInspectorSummary(activeStage, selectedDirection, selectedScene, selectedChunk);
+  const objectSummary = getInspectorSummary(project, activeStage, selectedDirection, selectedScene, selectedChunk);
 
   return (
     <aside className="inspector-panel">
@@ -810,26 +1149,31 @@ function InspectorPanel({
         {tab === "director" ? (
           <DirectorView
             activeStage={activeStage}
+            project={project}
             selectedDirection={selectedDirection}
             selectedScene={selectedScene}
             selectedChunk={selectedChunk}
+            selectedKnowledgePacks={selectedKnowledgePacks}
           />
         ) : null}
-        {tab === "evidence" ? <EvidenceView refs={evidenceRefs} /> : null}
+        {tab === "evidence" ? <EvidenceView project={project} refs={evidenceRefs} /> : null}
         {tab === "yaml" ? <YamlView yaml={yamlPreview} onDownloadYaml={onDownloadYaml} /> : null}
         {tab === "validation" ? <ValidationView report={validationReport} /> : null}
-        {tab === "timeline" ? <TimelineView /> : null}
-        {tab === "trace" ? <TraceView /> : null}
+        {tab === "timeline" ? <TimelineView project={project} /> : null}
+        {tab === "trace" ? (
+          <TraceView project={project} onRunLocalHarnessPreview={onRunLocalHarnessPreview} />
+        ) : null}
       </div>
     </aside>
   );
 }
 
 function getInspectorSummary(
+  project: ScreenplayProject,
   activeStage: StageId,
-  selectedDirection: (typeof sampleProject.directions)[number],
-  selectedScene: (typeof sampleProject.scenes)[number],
-  selectedChunk: (typeof sampleProject.source.chapters)[number]["chunks"][number]
+  selectedDirection: ScreenplayProject["directions"][number],
+  selectedScene: ScreenplayProject["scenes"][number],
+  selectedChunk: SourceChunk
 ) {
   if (activeStage === "source") {
     return {
@@ -843,7 +1187,7 @@ function getInspectorSummary(
     return {
       eyebrow: "故事诊断",
       title: "核心冲突与风险",
-      subtitle: sampleProject.story_diagnosis.opening_hook
+      subtitle: project.story_diagnosis.opening_hook
     };
   }
 
@@ -858,13 +1202,13 @@ function getInspectorSummary(
   if (activeStage === "brief") {
     return {
       eyebrow: "改编简报",
-      title: `${sampleProject.adaptation_brief.target_medium} · ${sampleProject.adaptation_brief.tone}`,
+      title: `${project.adaptation_brief.target_medium} · ${project.adaptation_brief.tone}`,
       subtitle: "后续写作要遵守的创作边界"
     };
   }
 
   if (activeStage === "compare") {
-    const latest = sampleProject.versions[sampleProject.versions.length - 1];
+    const latest = project.versions[project.versions.length - 1];
     return {
       eyebrow: "版本对比",
       title: latest.label,
@@ -881,14 +1225,18 @@ function getInspectorSummary(
 
 function DirectorView({
   activeStage,
+  project,
   selectedDirection,
   selectedScene,
-  selectedChunk
+  selectedChunk,
+  selectedKnowledgePacks
 }: {
   activeStage: StageId;
-  selectedDirection: (typeof sampleProject.directions)[number];
-  selectedScene: (typeof sampleProject.scenes)[number];
-  selectedChunk: (typeof sampleProject.source.chapters)[number]["chunks"][number];
+  project: ScreenplayProject;
+  selectedDirection: ScreenplayProject["directions"][number];
+  selectedScene: ScreenplayProject["scenes"][number];
+  selectedChunk: SourceChunk;
+  selectedKnowledgePacks: SelectedKnowledgePack[];
 }) {
   const action = stageActions[activeStage];
 
@@ -911,6 +1259,17 @@ function DirectorView({
         <h3>{selectedDirection.title}</h3>
         <span>{selectedDirection.recommendation_reason}</span>
       </section>
+      <section className="detail-block">
+        <p>Active Knowledge Packs</p>
+        <h3>{selectedKnowledgePacks.length} 个知识包已选择</h3>
+        <div className="knowledge-pack-list">
+          {selectedKnowledgePacks.map((item) => (
+            <span key={item.pack.id} title={item.reason}>
+              {item.pack.title}
+            </span>
+          ))}
+        </div>
+      </section>
       {activeStage === "blueprint" || activeStage === "screenplay" || activeStage === "compare" ? (
         <section className="detail-block">
           <p>当前场景</p>
@@ -921,14 +1280,17 @@ function DirectorView({
       <section className="next-step-card">
         <p>下一步</p>
         <h3>{action.label}</h3>
-        <span>{action.detail}</span>
+        <span>
+          {action.detail} 当前项目含 {project.source.chapters.length} 章、
+          {project.source.chapters.flatMap((chapter) => chapter.chunks).length} 段依据。
+        </span>
       </section>
     </div>
   );
 }
 
-function EvidenceView({ refs }: { refs: string[] }) {
-  const chunks = sampleProject.source.chapters.flatMap((chapter) => chapter.chunks);
+function EvidenceView({ project, refs }: { project: ScreenplayProject; refs: string[] }) {
+  const chunks = project.source.chapters.flatMap((chapter) => chapter.chunks);
   const selectedRefs = new Set(refs);
   const visibleChunks = chunks.filter((chunk) => selectedRefs.has(chunk.id));
   const fallbackChunks = visibleChunks.length ? visibleChunks : chunks;
@@ -977,10 +1339,10 @@ function ValidationView({ report }: { report: ReturnType<typeof validateScreenpl
   );
 }
 
-function TimelineView() {
+function TimelineView({ project }: { project: ScreenplayProject }) {
   return (
     <div className="inspector-stack">
-      {sampleProject.versions.map((version) => (
+      {project.versions.map((version) => (
         <section key={version.id} className="timeline-item">
           <p>{version.created_at}</p>
           <h3>{version.label}</h3>
@@ -991,20 +1353,44 @@ function TimelineView() {
   );
 }
 
-function TraceView() {
+function TraceView({
+  project,
+  onRunLocalHarnessPreview
+}: {
+  project: ScreenplayProject;
+  onRunLocalHarnessPreview: () => void;
+}) {
   return (
     <div className="inspector-stack">
-      {sampleProject.harness_trace.map((run) => (
-        <section key={run.id} className="trace-item">
-          <p>{run.status === "succeeded" ? "完成" : run.status}</p>
-          <h3>{run.step}</h3>
-          <span>
-            {run.source_chunks_used.length} 段依据，{run.knowledge_packs_used.length} 个知识包，
-            {run.repair_attempts} 次修复
-          </span>
-        </section>
+      <button className="quiet-button fit-content" onClick={onRunLocalHarnessPreview}>
+        <TerminalSquare size={16} />
+        本地 JSON 预演
+      </button>
+      {project.harness_trace.map((run) => (
+        <TraceItem key={run.id} run={run} />
       ))}
     </div>
+  );
+}
+
+function TraceItem({ run }: { run: HarnessRun }) {
+  return (
+    <section className="trace-item">
+      <p>{run.status === "succeeded" ? "完成" : run.status}</p>
+      <h3>{run.step}</h3>
+      <span>
+        {run.source_chunks_used.length} 段依据，{run.knowledge_packs_used.length} 个知识包，
+        {run.repair_attempts} 次修复
+      </span>
+      {run.knowledge_packs_used.length ? (
+        <div className="knowledge-pack-list compact">
+          {run.knowledge_packs_used.map((pack) => (
+            <span key={pack}>{pack}</span>
+          ))}
+        </div>
+      ) : null}
+      {run.error ? <strong className="trace-error">{run.error}</strong> : null}
+    </section>
   );
 }
 

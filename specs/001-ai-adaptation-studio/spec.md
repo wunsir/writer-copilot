@@ -2,9 +2,21 @@
 
 ## Status
 
-Draft for project bootstrap.
+Active baseline spec.
 
-This spec is based only on the provided development notes and the current repository state. The repository currently has no application scaffold, package configuration, or existing source code.
+The repository now has an initial Next.js Studio scaffold, package configuration, baseline verification commands, domain validation utilities, YAML export, sample project data, and a mock full-flow Studio UI.
+
+Current UI baseline:
+
+- Stage 1 visual shell is complete enough for acceptance: modern minimal product shell, narrower `作品目录`, primary center canvas, and right `依据与检查` panel.
+- Stage 2 interaction pass is complete enough for acceptance: the center canvas changes by stage and the Inspector follows selected source chunks, directions, scenes, and versions.
+- Microcopy + Action Semantics pass is complete enough for acceptance: visible UI copy uses natural Chinese adaptation-workbench language, and unavailable actions are marked `待接入`.
+- Pasted-text and `.txt` source import are connected.
+- Chapter parsing, stable source chunks, lightweight search, and imported-source evidence display are connected.
+- Knowledge pack files, metadata, selection reasons, Inspector display, local JSON-first harness preview, and trace recording are connected.
+- DashScope/OpenAI-compatible provider config, direction generation route, and UI entry are connected.
+
+Do not restart broad UI structure, color, font, or shadow work unless the user explicitly asks. The next product slice should continue API-backed JSON generation beyond directions.
 
 ## Goal
 
@@ -264,9 +276,9 @@ Harness steps should include:
 
 Use a three-panel product studio layout:
 
-- Left: Creation Panel.
+- Left: `作品目录`.
 - Center: Adaptation Canvas.
-- Right: AI Director / Inspector.
+- Right: `依据与检查` / `选择详情`.
 
 The UI should support these center states:
 
@@ -289,6 +301,8 @@ The right inspector should support:
 - Version Timeline.
 - Harness Trace.
 - Settings.
+
+Current UI supports the main flow, stage-specific surfaces, pasted-text and `.txt` import, chapter parsing, source chunks, lightweight search, imported-source evidence display, active knowledge packs, local JSON harness preview, trace recording, and API-backed direction generation when local env is configured. API-backed story diagnosis, brief, blueprint, screenplay generation, `.docx` import, settings persistence, and source-ref jumping remain future implementation work.
 
 ### Product Settings
 

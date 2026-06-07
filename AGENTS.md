@@ -2,7 +2,7 @@
 
 ## Project Status
 
-This repository is currently the starting point for Writer Copilot. Treat repo files as the source of truth. If project docs, tests, lint, CI, or directory-level `AGENTS.md` files are added later and conflict with this file, follow the more specific checked-in rule.
+This repository now has an initial Next.js Studio scaffold with sample data, domain validation, YAML export, and a mock full-flow Studio UI. Treat repo files as the source of truth. If project docs, tests, lint, CI, or directory-level `AGENTS.md` files are added later and conflict with this file, follow the more specific checked-in rule.
 
 ## Product Direction
 
@@ -25,15 +25,33 @@ Core product capabilities:
 - Scene Revision for local natural-language edits to one selected scene.
 - Creative Versioning with checkpoints, timeline, compare, and restore.
 - Adaptation Harness with step orchestration, JSON validation, repair, and trace.
-- Three-panel Studio UI: Creation Panel, Adaptation Canvas, AI Director / Inspector.
+- Three-panel Studio UI: `作品目录`, stage-specific Adaptation Canvas, `依据与检查` / `选择详情`.
+
+## Current Studio Baseline
+
+The current UI baseline is acceptable as of the Stage 2 interaction pass and the Microcopy + Action Semantics pass. Do not continue structural UI refactors, color tuning, font tuning, or shadow tuning unless the user explicitly asks.
+
+Current implemented state:
+
+- Product shell uses a modern minimal visual system.
+- Left panel is labeled `作品目录`.
+- Center canvas changes by stage: source reader, diagnosis report, direction lanes, brief document, scene board, screenplay preview, compare view.
+- Right panel is labeled `依据与检查` / `选择详情` and follows the selected source chunk, direction, scene, or version.
+- Real pasted-text and `.txt` source import are connected.
+- Chapter parsing, stable source chunks, basic keyword/name extraction, and lightweight source search are connected.
+- Knowledge pack markdown files, metadata, selection reasons, and Inspector display are connected.
+- Local JSON-first harness preview and trace recording are connected without external API calls.
+- DashScope/OpenAI-compatible provider config, API route, and UI entry for API-backed direction generation are connected. Live calls require ignored local env configuration.
+- UI copy should use natural Chinese adaptation-workbench language, not engineering labels.
+- API-backed story diagnosis, brief, blueprint, screenplay generation, `.docx` import, durable persistence, source-ref jumping, and settings save are not connected yet and should stay visibly marked as `待接入` until implemented.
 
 ## Studio Interaction Direction
 
 The UI should feel like a real creative studio, not a static form page.
 
-- The left Creation Panel is an entry and control surface. Its items should be able to expand, focus, or enter a deeper creation mode instead of only toggling flat settings.
+- The left `作品目录` is an entry and control surface. Its items should be able to expand, focus, or enter a deeper creation mode instead of only toggling flat settings.
 - The center Adaptation Canvas is the main working surface. It changes by stage and should make the current creative asset feel primary: source map, diagnosis, direction exploration, brief, blueprint, screenplay, compare.
-- The right AI Director / Inspector provides context, evidence, YAML, validation, timeline, trace, and selected-item details without stealing the main workflow.
+- The right `依据与检查` panel provides context, evidence, YAML, validation, timeline, trace, and selected-item details without stealing the main workflow.
 - Direction Explorer, Adaptation Brief, and Scene Blueprint must appear early in the product shell, even before real AI is connected.
 - Prefer progressive disclosure, focused editing states, and stage transitions over dense all-at-once panels.
 - Do not make a landing page as the first screen. The first screen should be the usable Studio.
@@ -72,6 +90,14 @@ Use a lightweight, risk-based workflow:
 - Do not modify `.env` files unless explicitly asked.
 - Do not commit secrets.
 - Ask before destructive actions, public API changes, database schema changes, auth, billing, deployment, CI, or broad architecture changes.
+
+## Current Commands
+
+- `npm run dev`
+- `npm test`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
 
 ## Verification Expectations
 
